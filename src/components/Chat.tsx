@@ -255,6 +255,9 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
           if (typeof data.message === 'string') {
             console.log('✅ Respuesta recibida:', data.message);
             
+            // Ahora SÍ mostramos "escribiendo..." por 1 segundo antes de mostrar el mensaje
+            setChatState(prev => ({ ...prev, isTyping: true }));
+            
             // Simular escritura por 1 segundo
             await new Promise(resolve => setTimeout(resolve, 1000));
 
