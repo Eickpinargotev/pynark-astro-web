@@ -137,7 +137,6 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
       const payload: Record<string, any> = {
         agent_id: agentConfig.id,
         session_id: sessionId,
-        msg_id: messageId,
         turn: turn,
         message: content.trim()
       };
@@ -225,6 +224,8 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   const startPollingForResponse = (baseUrl?: string) => {
     let pollCount = 0;
     const maxPolls = 60; // Máximo 60 polls (2 minutos)
+    let inactivityCount = 0; // Contador de polls sin respuesta
+    const maxInactivity = 7; // 7 polls sin respuesta = 14 segundos de inactividad (~15s)
     
     const interval = setInterval(async () => {
       pollCount++;
@@ -263,15 +264,30 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
             setMessages(prev => [...prev, botMessage]);
             setTurn(prev => prev + 1);
-            setIsWaitingResponse(false);
             setChatState(prev => ({ ...prev, isTyping: false }));
             
-            clearInterval(interval);
-            setPollingInterval(null);
+            // NO detener el polling, continuar escuchando por más respuestas
+            // Resetear el contador para dar más tiempo a respuestas adicionales
+            pollCount = Math.max(0, pollCount - 10);
+            inactivityCount = 0; // Reset inactivity counter
             return;
+          } else {
+            // No hay respuesta, incrementar contador de inactividad
+            inactivityCount++;
           }
         } else {
           console.warn(`⚠️ Poll ${pollCount} falló:`, response.status);
+          inactivityCount++;
+        }
+
+        // Stop polling si ha habido mucha inactividad (la IA terminó de responder)
+        if (inactivityCount >= maxInactivity) {
+          console.log(`✅ Finalizando polling - ${maxInactivity} polls sin respuesta`);
+          clearInterval(interval);
+          setPollingInterval(null);
+          setIsWaitingResponse(false);
+          setChatState(prev => ({ ...prev, isTyping: false }));
+          return;
         }
 
         // Stop polling if max attempts reached

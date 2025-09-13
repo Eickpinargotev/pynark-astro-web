@@ -1,7 +1,8 @@
 import type { APIRoute } from 'astro';
 
 // In-memory store for async chat responses (dev-only; not persistent)
-// Key format: `${session_id}:${msg_id}` -> { message, createdAt }
+// Key format: `${session_id}:${timestamp}` -> { message, createdAt }
+// Cambio: usar timestamp en lugar de msg_id para permitir múltiples respuestas por sesión
 const responseStore = new Map<string, { message: string; createdAt: number }>();
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
 const purgeOld = () => {
@@ -39,7 +40,6 @@ const json = (data: unknown, init?: number | ResponseInit) =>
 export const GET: APIRoute = async ({ url }) => {
   purgeOld();
   const session_id = url.searchParams.get('session_id') ?? '';
-  const msg_id = url.searchParams.get('msg_id') ?? '';
   const wantDebug = url.searchParams.get('debug') === '1';
 
   if (!session_id) {
@@ -49,22 +49,13 @@ export const GET: APIRoute = async ({ url }) => {
     return json({ error: 'Missing session_id' }, 400);
   }
 
-  // Si hay msg_id, buscar mensaje específico, si no, buscar cualquier respuesta para la sesión
+  // Buscar cualquier respuesta para esta sesión (ya no usamos msg_id)
   let found;
-  if (msg_id) {
-    const key = `${session_id}:${msg_id}`;
-    found = responseStore.get(key);
-    if (found) {
+  for (const [key, value] of responseStore.entries()) {
+    if (key.startsWith(`${session_id}:`)) {
+      found = value;
       responseStore.delete(key);
-    }
-  } else {
-    // Buscar cualquier respuesta para esta sesión
-    for (const [key, value] of responseStore.entries()) {
-      if (key.startsWith(`${session_id}:`)) {
-        found = value;
-        responseStore.delete(key);
-        break;
-      }
+      break;
     }
   }
   if (!found) {
@@ -89,14 +80,13 @@ export const POST: APIRoute = async ({ request }) => {
     request.headers.forEach((v, k) => (headers[k] = v));
 
     let session_id: string | undefined;
-    let msg_id: string | undefined;
     let message: string | undefined;
     let parsedBody: any = undefined;
     let rawBody: string | undefined = undefined;
 
     if (contentType.includes('application/json')) {
       parsedBody = await request.json();
-      ({ session_id, msg_id, message } = parsedBody ?? {});
+      ({ session_id, message } = parsedBody ?? {});
     } else if (
       contentType.includes('application/x-www-form-urlencoded') ||
       contentType.includes('multipart/form-data')
@@ -104,13 +94,12 @@ export const POST: APIRoute = async ({ request }) => {
       const form = await request.formData();
       parsedBody = Object.fromEntries(form.entries());
       session_id = String(form.get('session_id') ?? '');
-      msg_id = String(form.get('msg_id') ?? '');
       message = String(form.get('message') ?? '');
     } else {
       rawBody = await request.text();
       try {
         parsedBody = JSON.parse(rawBody);
-        ({ session_id, msg_id, message } = parsedBody ?? {});
+        ({ session_id, message } = parsedBody ?? {});
       } catch {
         // leave parsedBody as text for debug
       }
@@ -122,14 +111,15 @@ export const POST: APIRoute = async ({ request }) => {
       contentType,
       rawBody,
       parsedBody,
-      extracted: { session_id, msg_id, message }
+      extracted: { session_id, message }
     });
 
-    if (!session_id || !msg_id || typeof message !== 'string') {
-      return json({ error: 'Invalid payload. Expected { session_id, msg_id, message }' }, 400);
+    if (!session_id || typeof message !== 'string') {
+      return json({ error: 'Invalid payload. Expected { session_id, message }. msg_id is optional.' }, 400);
     }
 
-    const key = `${session_id}:${msg_id}`;
+    // Usar timestamp para permitir múltiples respuestas por sesión
+    const key = `${session_id}:${Date.now()}`;
     responseStore.set(key, { message, createdAt: Date.now() });
 
     return json({ ok: true });
