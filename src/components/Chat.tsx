@@ -186,59 +186,22 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         throw new Error(`Error del servidor: ${response.status} - ${errorText}`);
       }
 
+      // Leer el cuerpo para logging, pero no lo mostramos en UI
       const responseText = await response.text();
-      console.log('✅ Webhook enviado exitosamente:', responseText);
-      // Always surface the raw webhook response for debugging
-      setMessages(prev => [
-        ...prev,
-        {
-          id: uuidv4(),
-          content: `WEBHOOK RAW (${response.status} ${response.statusText}):\n${responseText.substring(0, 2000)}`,
-          isUser: false,
-          timestamp: new Date()
-        }
-      ]);
+      console.log('✅ Webhook enviado exitosamente (oculto en UI):', responseText);
 
-      // Intentar respuesta síncrona
-      let immediateMessage: string | null = null;
-      try {
-        const parsed = JSON.parse(responseText);
-        if (parsed && typeof parsed === 'object') {
-          if (typeof parsed.message === 'string') {
-            immediateMessage = parsed.message as string;
-          } else if (parsed.data && typeof parsed.data.message === 'string') {
-            immediateMessage = parsed.data.message as string;
-          }
-        }
-      } catch {
-        // Ignorar si no es JSON
-      }
-
-      if (immediateMessage) {
-        // Mostrar respuesta directa del webhook
-        await new Promise(resolve => setTimeout(resolve, 800));
-        const botMessage: Message = {
-          id: uuidv4(),
-          content: immediateMessage,
-          isUser: false,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, botMessage]);
-        setTurn(prev => prev + 1);
-        setPendingMessageId(null);
-        setChatState(prev => ({ ...prev, isTyping: false, isLoading: false }));
-      } else if (callbackUrl) {
-        // Fallback a polling si existe endpoint de callback
+      // Usar siempre el callback/polling para mostrar la respuesta del bot
+      if (callbackUrl) {
         startPollingForResponse(messageId, callbackUrl);
         setChatState(prev => ({ ...prev, isLoading: false }));
       } else {
-        // No hay respuesta síncrona ni endpoint de callback
+        // Debe existir, porque hacemos fallback al origin; si no, marcamos error
         setPendingMessageId(null);
         setChatState(prev => ({ 
           ...prev, 
           isTyping: false,
           isLoading: false,
-          error: 'El webhook no devolvió respuesta inmediata y no hay endpoint de callback configurado.'
+          error: 'No hay endpoint de callback configurado.'
         }));
       }
 
@@ -292,8 +255,8 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
           if (typeof data.message === 'string') {
             console.log('✅ Respuesta recibida:', data.message);
             
-            // Simulate typing delay for realism
-            await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+            // Simular escritura por 1 segundo
+            await new Promise(resolve => setTimeout(resolve, 1000));
 
             const botMessage: Message = {
               id: uuidv4(),
@@ -310,17 +273,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
             clearInterval(pollInterval);
             return;
           }
-          // Si no hay message pero hay debug, muéstralo una sola vez al inicio
-          if (pollCount === 1 && data.debug) {
-            const debugPreview = JSON.stringify(data.debug, null, 2).slice(0, 800);
-            const dbg: Message = {
-              id: uuidv4(),
-              content: `DEBUG (callback pending):\n${debugPreview}`,
-              isUser: false,
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, dbg]);
-          }
+          // No mostramos mensajes de debug en la UI
         } else {
           console.warn(`⚠️ Poll ${pollCount} falló:`, response.status);
           try {
