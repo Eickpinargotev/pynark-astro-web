@@ -156,7 +156,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         payload: payload
       });
 
-      setChatState(prev => ({ ...prev, isTyping: true }));
+      // NO mostramos "escribiendo..." hasta recibir el callback
 
       // Test webhook connectivity first
       console.log('🔍 Probando conectividad del webhook...');
