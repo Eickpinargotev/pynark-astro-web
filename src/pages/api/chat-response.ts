@@ -51,10 +51,14 @@ export const GET: APIRoute = async ({ url }) => {
 
   // Buscar cualquier respuesta para esta sesión (ya no usamos msg_id)
   let found;
+  console.log(`🔍 Buscando respuestas para sesión: ${session_id}`);
+  console.log(`📦 Store actual:`, Array.from(responseStore.keys()));
+  
   for (const [key, value] of responseStore.entries()) {
     if (key.startsWith(`${session_id}:`)) {
       found = value;
       responseStore.delete(key);
+      console.log(`✅ Encontrada respuesta: ${key} -> ${value.message}`);
       break;
     }
   }
@@ -115,12 +119,18 @@ export const POST: APIRoute = async ({ request }) => {
     });
 
     if (!session_id || typeof message !== 'string') {
+      console.log(`❌ POST inválido - session_id: ${session_id}, message: ${message}`);
       return json({ error: 'Invalid payload. Expected { session_id, message }. msg_id is optional.' }, 400);
     }
+
+    console.log(`📨 POST válido recibido - session_id: ${session_id}, message: ${message}`);
 
     // Usar timestamp para permitir múltiples respuestas por sesión
     const key = `${session_id}:${Date.now()}`;
     responseStore.set(key, { message, createdAt: Date.now() });
+    
+    console.log(`💾 Respuesta guardada con clave: ${key}`);
+    console.log(`📦 Store después del guardado:`, Array.from(responseStore.keys()));
 
     return json({ ok: true });
   } catch (err) {

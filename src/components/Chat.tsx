@@ -246,6 +246,9 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         if (response.ok) {
           const data = await response.json();
           
+          // Debug temporal - mostrar qué llega del polling
+          console.log('🔍 Datos del polling:', data);
+          
           if (typeof data.message === 'string') {
             console.log('✅ Respuesta recibida:', data.message);
             
