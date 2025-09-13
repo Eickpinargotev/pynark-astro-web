@@ -27,8 +27,8 @@ const responseQueues = new Map<string, ResponseItem[]>();
 const sessionTracking = new Map<string, SessionInfo>();
 
 // Config
-const TTL_MS = 5 * 60 * 1000; // 5 minutes
-const INACTIVITY_TTL_MS = TTL_MS; // 5 minutos sin actividad del usuario => /delete
+const TTL_MS = 1 * 60 * 1000; // 1 minuto
+const INACTIVITY_TTL_MS = TTL_MS; // 1 minuto sin actividad del usuario => /delete
 const SESSION_GRACE_MS = 30 * 1000; // tiempo de gracia para limpiar una vez enviado /delete
 const MAX_WAIT_TIME_MS = 60 * 1000; // 60 segundos máximo de espera para "pending"
 const POLLING_FREQUENCY_MS = 2 * 1000; // Esperamos polling cada 2 segundos
