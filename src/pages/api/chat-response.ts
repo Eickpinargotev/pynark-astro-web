@@ -9,16 +9,18 @@ type ResponseItem = {
   consumed: boolean;
 };
 
-// Tracking de última actividad del cliente para determinar ventana de espera
-type ClientActivity = {
-  lastMessageTime: number;
-  messageCount: number;
+// Tracking de sesiones activas - detectar automáticamente cuando hay actividad
+type SessionInfo = {
+  lastPollTime: number; // Última vez que el cliente hizo polling
+  lastResponseTime: number; // Última vez que llegó respuesta del agente
+  hasRecentPolling: boolean; // Si el cliente está haciendo polling activamente
 };
 
 const responseQueues = new Map<string, ResponseItem[]>();
-const clientActivity = new Map<string, ClientActivity>();
+const sessionTracking = new Map<string, SessionInfo>();
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
-const CLIENT_WAIT_WINDOW_MS = 30 * 1000; // 30 segundos después del último mensaje del cliente
+const ACTIVE_POLLING_WINDOW_MS = 45 * 1000; // 45 segundos de polling activo
+const POLLING_FREQUENCY_MS = 2 * 1000; // Esperamos polling cada 2 segundos
 
 const purgeOld = () => {
   const now = Date.now();
@@ -33,10 +35,10 @@ const purgeOld = () => {
     }
   }
   
-  // Purgar actividad de cliente antigua
-  for (const [sessionId, activity] of clientActivity.entries()) {
-    if (now - activity.lastMessageTime > TTL_MS) {
-      clientActivity.delete(sessionId);
+  // Purgar tracking de sesiones antiguas
+  for (const [sessionId, info] of sessionTracking.entries()) {
+    if (now - info.lastPollTime > TTL_MS) {
+      sessionTracking.delete(sessionId);
     }
   }
 };
@@ -78,43 +80,47 @@ export const GET: APIRoute = async ({ url }) => {
     return json({ error: 'Missing session_id' }, 400);
   }
 
-  console.log(`🔍 Buscando respuestas para sesión: ${session_id}`);
-  
-  const queue = responseQueues.get(session_id);
-  const activity = clientActivity.get(session_id);
   const now = Date.now();
   
-  // Debug info
-  if (activity) {
-    const timeSinceLastMessage = now - activity.lastMessageTime;
-    console.log(`📊 Actividad cliente: ${activity.messageCount} mensajes, último hace ${timeSinceLastMessage}ms`);
-  }
+  // Actualizar tracking de polling
+  const sessionInfo = sessionTracking.get(session_id) || {
+    lastPollTime: 0,
+    lastResponseTime: 0,
+    hasRecentPolling: false
+  };
+  
+  const timeSinceLastPoll = now - sessionInfo.lastPollTime;
+  sessionInfo.lastPollTime = now;
+  sessionInfo.hasRecentPolling = timeSinceLastPoll < (POLLING_FREQUENCY_MS * 3); // Tolerancia de 3x la frecuencia esperada
+  sessionTracking.set(session_id, sessionInfo);
+
+  console.log(`🔍 GET para sesión: ${session_id}, polling activo: ${sessionInfo.hasRecentPolling}`);
+  
+  const queue = responseQueues.get(session_id);
   
   if (!queue || queue.length === 0) {
-    // Verificar si aún estamos en la ventana de espera
-    if (activity && (now - activity.lastMessageTime < CLIENT_WAIT_WINDOW_MS)) {
-      console.log(`⏳ Esperando respuesta del agente (${CLIENT_WAIT_WINDOW_MS - (now - activity.lastMessageTime)}ms restantes)`);
+    // Si el cliente está haciendo polling activamente, consideramos que está esperando respuesta
+    if (sessionInfo.hasRecentPolling) {
+      const waitTime = Math.max(0, ACTIVE_POLLING_WINDOW_MS - (now - sessionInfo.lastPollTime));
+      console.log(`⏳ Cliente haciendo polling activo, esperando respuesta...`);
+      
       if (wantDebug) {
         return json({ 
           pending: true, 
-          waitTimeRemaining: CLIENT_WAIT_WINDOW_MS - (now - activity.lastMessageTime),
+          waitTimeRemaining: waitTime,
+          activePolling: true,
           debug: debugLog.slice(-5) 
         });
       }
-      return json({
+      return json({ 
         pending: true, 
-        waitTimeRemaining: CLIENT_WAIT_WINDOW_MS - (now - activity.lastMessageTime),
+        waitTimeRemaining: waitTime,
+        activePolling: true
       });
     }
     
-    // Fuera de la ventana de espera, limpiar actividad
-    if (activity) {
-      console.log(`⌛ Ventana de espera expirada para sesión ${session_id}`);
-      clientActivity.delete(session_id);
-    }
-    
     if (wantDebug) {
-      return json({ pending: true, debug: debugLog.slice(-5) });
+      return json({ pending: false, debug: debugLog.slice(-5) });
     }
     return json({});
   }
@@ -125,15 +131,15 @@ export const GET: APIRoute = async ({ url }) => {
     if (wantDebug) {
       return json({ pending: true, debug: debugLog.slice(-5) });
     }
-    return json({});
+    return json({ pending: true });
   }
 
-  // Marcar como consumida y limpiar actividad del cliente (conversación completada)
+  // Marcar como consumida y actualizar tracking
   pendingResponse.consumed = true;
-  clientActivity.delete(session_id); // Reset para nueva conversación
+  sessionInfo.lastResponseTime = now;
+  sessionInfo.hasRecentPolling = false; // Reset después de entregar respuesta
   
   console.log(`✅ Respuesta enviada: ${pendingResponse.message}`);
-  console.log(`🔄 Actividad de cliente limpiada para nueva conversación`);
 
   // Limpiar respuestas consumidas
   const cleanQueue = queue.filter(item => 
@@ -201,6 +207,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     console.log(`📨 Respuesta de n8n recibida - session_id: ${session_id}, message: ${message}`);
 
+    // Verificar si hay una sesión con polling activo
+    const sessionInfo = sessionTracking.get(session_id);
+    if (sessionInfo) {
+      console.log(`📊 Sesión tiene polling activo: ${sessionInfo.hasRecentPolling}`);
+    }
+
     // Crear nueva respuesta del agente
     const responseItem: ResponseItem = {
       message,
@@ -231,7 +243,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-// Nuevo endpoint para que el cliente registre cuando envía mensajes
+// Mantener el endpoint PUT por compatibilidad, pero ya no es necesario
 export const PUT: APIRoute = async ({ request }) => {
   try {
     purgeOld();
@@ -242,15 +254,18 @@ export const PUT: APIRoute = async ({ request }) => {
     }
     
     const now = Date.now();
-    const activity = clientActivity.get(session_id) || { lastMessageTime: 0, messageCount: 0 };
+    const sessionInfo = sessionTracking.get(session_id) || {
+      lastPollTime: now,
+      lastResponseTime: 0,
+      hasRecentPolling: true
+    };
     
-    activity.lastMessageTime = now;
-    activity.messageCount += 1;
-    clientActivity.set(session_id, activity);
+    sessionInfo.hasRecentPolling = true;
+    sessionTracking.set(session_id, sessionInfo);
     
-    console.log(`📝 Cliente envió mensaje ${activity.messageCount} en sesión ${session_id}`);
+    console.log(`📝 Actividad de cliente registrada para sesión ${session_id}`);
     
-    return json({ ok: true, messageCount: activity.messageCount });
+    return json({ ok: true });
   } catch (err) {
     return json({ error: 'Invalid request' }, 400);
   }
