@@ -343,12 +343,20 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     sendMessage(inputValue);
+    // Mantener foco en el input después de enviar
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 10);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage(inputValue);
+      // Mantener foco en el input después de enviar
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 10);
     }
   };
 
@@ -405,7 +413,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
               }`}
             >
               <p className="text-sm leading-relaxed">{message.content}</p>
-              <p className={`text-xs mt-1 ${
+              <p className={`text-xs mt-1 text-right ${
                 message.isUser ? 'text-primary-100' : 'text-slate-500 dark:text-slate-400'
               }`}>
                 {message.timestamp.toLocaleTimeString('es-ES', { 
