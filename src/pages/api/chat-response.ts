@@ -1,14 +1,27 @@
 import type { APIRoute } from 'astro';
 
-// In-memory store for async chat responses (dev-only; not persistent)
-// Key format: `${session_id}:${timestamp}` -> { message, createdAt }
-// Cambio: usar timestamp en lugar de msg_id para permitir múltiples respuestas por sesión
-const responseStore = new Map<string, { message: string; createdAt: number }>();
+// Cola de respuestas por sesión para manejar múltiples mensajes
+// Key: session_id -> Array de respuestas ordenadas por timestamp
+type ResponseItem = { 
+  message: string; 
+  createdAt: number; 
+  id: string; // ID único para cada respuesta
+  consumed: boolean; // Flag para marcar si ya fue enviada al cliente
+};
+
+const responseQueues = new Map<string, ResponseItem[]>();
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 const purgeOld = () => {
   const now = Date.now();
-  for (const [k, v] of responseStore.entries()) {
-    if (now - v.createdAt > TTL_MS) responseStore.delete(k);
+  for (const [sessionId, queue] of responseQueues.entries()) {
+    // Filtrar respuestas expiradas
+    const validResponses = queue.filter(item => now - item.createdAt <= TTL_MS);
+    if (validResponses.length === 0) {
+      responseQueues.delete(sessionId);
+    } else {
+      responseQueues.set(sessionId, validResponses);
+    }
   }
 };
 
@@ -49,36 +62,51 @@ export const GET: APIRoute = async ({ url }) => {
     return json({ error: 'Missing session_id' }, 400);
   }
 
-  // Buscar cualquier respuesta para esta sesión (ya no usamos msg_id)
-  let found;
   console.log(`🔍 Buscando respuestas para sesión: ${session_id}`);
-  console.log(`📦 Store actual:`, Array.from(responseStore.keys()));
-  
-  for (const [key, value] of responseStore.entries()) {
-    if (key.startsWith(`${session_id}:`)) {
-      found = value;
-      responseStore.delete(key);
-      console.log(`✅ Encontrada respuesta: ${key} -> ${value.message}`);
-      break;
-    }
-  }
-  if (!found) {
-    // Not ready yet; return an empty JSON so client continues polling safely
+  console.log(`📦 Colas actuales:`, Array.from(responseQueues.keys()));
+
+  const queue = responseQueues.get(session_id);
+  if (!queue || queue.length === 0) {
     if (wantDebug) {
       return json({ pending: true, debug: debugLog.slice(-5) });
     }
     return json({});
   }
 
-  if (wantDebug) {
-    return json({ message: found.message, debug: debugLog.slice(-5) });
+  // Buscar la primera respuesta no consumida
+  const pendingResponse = queue.find(item => !item.consumed);
+  if (!pendingResponse) {
+    if (wantDebug) {
+      return json({ pending: true, debug: debugLog.slice(-5) });
+    }
+    return json({});
   }
-  return json({ message: found.message });
+
+  // Marcar como consumida en lugar de eliminar
+  pendingResponse.consumed = true;
+  console.log(`✅ Respuesta marcada como consumida: ${pendingResponse.id} -> ${pendingResponse.message}`);
+
+  // Limpiar respuestas consumidas antiguas (opcional, para mantener memoria baja)
+  const now = Date.now();
+  const cleanQueue = queue.filter(item => 
+    !item.consumed || (now - item.createdAt < 30000) // Mantener consumidas por 30s
+  );
+  
+  if (cleanQueue.length === 0) {
+    responseQueues.delete(session_id);
+  } else {
+    responseQueues.set(session_id, cleanQueue);
+  }
+
+  if (wantDebug) {
+    return json({ message: pendingResponse.message, debug: debugLog.slice(-5) });
+  }
+  return json({ message: pendingResponse.message });
 };
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-  purgeOld();
+    purgeOld();
     const contentType = request.headers.get('content-type') || '';
     const headers: Record<string, string> = {};
     request.headers.forEach((v, k) => (headers[k] = v));
@@ -125,12 +153,21 @@ export const POST: APIRoute = async ({ request }) => {
 
     console.log(`📨 POST válido recibido - session_id: ${session_id}, message: ${message}`);
 
-    // Usar timestamp para permitir múltiples respuestas por sesión
-    const key = `${session_id}:${Date.now()}`;
-    responseStore.set(key, { message, createdAt: Date.now() });
+    // Crear nueva respuesta con ID único
+    const responseItem: ResponseItem = {
+      message,
+      createdAt: Date.now(),
+      id: `${session_id}:${Date.now()}:${Math.random().toString(36).substr(2, 9)}`,
+      consumed: false
+    };
+
+    // Agregar a la cola de la sesión
+    const currentQueue = responseQueues.get(session_id) || [];
+    currentQueue.push(responseItem);
+    responseQueues.set(session_id, currentQueue);
     
-    console.log(`💾 Respuesta guardada con clave: ${key}`);
-    console.log(`📦 Store después del guardado:`, Array.from(responseStore.keys()));
+    console.log(`💾 Respuesta agregada a cola: ${responseItem.id}`);
+    console.log(`📊 Cola de sesión ${session_id} tiene ${currentQueue.length} respuesta(s)`);
 
     return json({ ok: true });
   } catch (err) {
