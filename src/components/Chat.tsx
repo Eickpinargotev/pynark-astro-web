@@ -280,9 +280,12 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
             setPendingMessages(prev => {
               const newSet = new Set(prev);
               newSet.delete(messageId);
+              // Solo quitar "escribiendo..." si no hay más mensajes pendientes
+              if (newSet.size === 0) {
+                setChatState(prev => ({ ...prev, isTyping: false }));
+              }
               return newSet;
             });
-            setChatState(prev => ({ ...prev, isTyping: false }));
             
             clearInterval(pollInterval);
             return;
@@ -306,18 +309,21 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
         // Stop polling if max attempts reached
         if (pollCount >= maxPolls) {
-          console.error('❌ Máximo de intentos de polling alcanzado');
+          console.error(`❌ Timeout para mensaje ${messageId}`);
           clearInterval(pollInterval);
           setPendingMessages(prev => {
             const newSet = new Set(prev);
             newSet.delete(messageId);
+            // Solo mostrar error si no quedan mensajes pendientes
+            if (newSet.size === 0) {
+              setChatState(prev => ({ 
+                ...prev, 
+                isTyping: false, 
+                error: 'Tiempo de espera agotado. El agente no respondió.' 
+              }));
+            }
             return newSet;
           });
-          setChatState(prev => ({ 
-            ...prev, 
-            isTyping: false, 
-            error: 'Tiempo de espera agotado. El agente no respondió.' 
-          }));
         }
       } catch (error) {
         console.error('💥 Error en polling:', error);
@@ -427,7 +433,9 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
                   : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-sm'
               }`}
             >
-              <p className="text-sm leading-relaxed">{message.content}</p>
+              <p className={`text-sm leading-relaxed ${
+                message.isUser ? 'text-right' : 'text-left'
+              }`}>{message.content}</p>
               <p className={`text-xs mt-1 text-right ${
                 message.isUser ? 'text-primary-100' : 'text-slate-500 dark:text-slate-400'
               }`}>
