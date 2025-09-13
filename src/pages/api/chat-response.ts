@@ -105,7 +105,8 @@ const purgeOld = () => {
     // Limpiar tracking si la sesión está cerrada y ya se entregó (o pasó gracia)
     if (info.sessionClosed) {
       const queue = responseQueues.get(sessionId) || [];
-      const hasUnconsumed = queue.some(i => !i.consumed);
+      // No bloquear la purga por mensajes de sistema (p.ej. '/delete') que nunca serán consumidos si el usuario cerró la pestaña
+      const hasUnconsumed = queue.some(i => !i.consumed && (i.type !== 'system') && (i.message !== DELETE_TRIGGER));
       const graceExpired = (now - info.closedAt) > SESSION_GRACE_MS;
       if (!hasUnconsumed && graceExpired) {
         sessionTracking.delete(sessionId);
@@ -187,6 +188,28 @@ export const GET: APIRoute = async ({ url }) => {
   console.log(`📊 Esperando respuesta: ${sessionInfo.isWaitingForResponse}, tiempo desde primer poll: ${timeSinceFirstPoll}ms, cerrada: ${sessionInfo.sessionClosed}`);
   
   const queue = responseQueues.get(session_id) || [];
+  const makeDebug = () => {
+    const q = responseQueues.get(session_id) || [];
+    const summary = {
+      total: q.length,
+      unconsumed: q.filter(i => !i.consumed).length,
+      unconsumedAgent: q.filter(i => !i.consumed && (i.type !== 'system') && (i.message !== DELETE_TRIGGER)).length,
+      last5: q.slice(-5).map(i => ({ id: i.id, type: i.type ?? 'agent', consumed: i.consumed, msg: i.message }))
+    };
+    return {
+      session: {
+        lastPollTime: sessionInfo.lastPollTime,
+        lastResponseTime: sessionInfo.lastResponseTime,
+        isWaitingForResponse: sessionInfo.isWaitingForResponse,
+        firstPollTime: sessionInfo.firstPollTime,
+        lastUserActivity: sessionInfo.lastUserActivity,
+        sessionClosed: sessionInfo.sessionClosed,
+        closedAt: sessionInfo.closedAt
+      },
+      queue: summary,
+      log: debugLog.slice(-5)
+    };
+  };
   
   // Entregar todas las respuestas no consumidas en orden (multi-mensaje)
   const pending = queue.filter(item => !item.consumed);
@@ -202,7 +225,7 @@ export const GET: APIRoute = async ({ url }) => {
       message: pending[0]?.message,
       messages: pending.map(p => p.message),
       count: pending.length,
-      ...(wantDebug ? { debug: debugLog.slice(-5) } : {})
+      ...(wantDebug ? { debug: makeDebug() } : {})
     };
     console.log(`✅ Enviando ${pending.length} mensaje(s)`);
     return json(payload);
@@ -236,7 +259,7 @@ export const GET: APIRoute = async ({ url }) => {
             message: toDeliver[0]?.message,
             messages: toDeliver.map(p => p.message),
             count: toDeliver.length,
-            ...(wantDebug ? { debug: debugLog.slice(-5) } : {})
+            ...(wantDebug ? { debug: makeDebug() } : {})
           };
           console.log(`✅ Enviando ${toDeliver.length} mensaje(s) (long-poll)`);
           return json(payload);
@@ -246,14 +269,14 @@ export const GET: APIRoute = async ({ url }) => {
       // timeout del long-poll; actualizamos el tiempo restante y devolvemos pending
       waitTimeRemaining = Math.max(0, MAX_WAIT_TIME_MS - (Date.now() - sessionInfo.firstPollTime));
       if (wantDebug) {
-        return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll, debug: debugLog.slice(-5) });
+        return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll, debug: makeDebug() });
       }
       return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll });
     }
 
     // Sin presupuesto de espera (queda poco en la ventana): devolvemos pending inmediatamente
     if (wantDebug) {
-      return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll, debug: debugLog.slice(-5) });
+      return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll, debug: makeDebug() });
     }
     return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll });
   }
@@ -265,7 +288,7 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   if (wantDebug) {
-    return json({ pending: false, debug: debugLog.slice(-5) });
+    return json({ pending: false, debug: makeDebug() });
   }
   return json({});
 };
@@ -388,5 +411,12 @@ export const PUT: APIRoute = async ({ request }) => {
   }
 };
 
-// Optional cleanup (no scheduler here; kept minimal for dev)
-// Consider purging old entries on each POST/GET if needed.
+// Ejecutar purgeOld periódicamente para detectar inactividad aunque no haya requests
+// Evita fugas de memoria cuando el usuario cierra la pestaña y nunca consume '/delete'
+declare const global: any;
+const g: any = (globalThis as any);
+if (!g.__pynarkCleanupInterval) {
+  try {
+    g.__pynarkCleanupInterval = setInterval(purgeOld, 30 * 1000); // cada 30s
+  } catch {}
+}
