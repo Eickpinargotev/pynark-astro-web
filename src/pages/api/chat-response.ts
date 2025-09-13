@@ -1,26 +1,42 @@
 import type { APIRoute } from 'astro';
 
-// Cola de respuestas por sesión para manejar múltiples mensajes
-// Key: session_id -> Array de respuestas ordenadas por timestamp
+// Cola de respuestas por sesión para manejar el flujo correcto:
+// Cliente envía múltiples mensajes -> n8n procesa -> envía una respuesta
 type ResponseItem = { 
   message: string; 
   createdAt: number; 
-  id: string; // ID único para cada respuesta
-  consumed: boolean; // Flag para marcar si ya fue enviada al cliente
+  id: string;
+  consumed: boolean;
+};
+
+// Tracking de última actividad del cliente para determinar ventana de espera
+type ClientActivity = {
+  lastMessageTime: number;
+  messageCount: number;
 };
 
 const responseQueues = new Map<string, ResponseItem[]>();
+const clientActivity = new Map<string, ClientActivity>();
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CLIENT_WAIT_WINDOW_MS = 30 * 1000; // 30 segundos después del último mensaje del cliente
 
 const purgeOld = () => {
   const now = Date.now();
+  
+  // Purgar respuestas antiguas
   for (const [sessionId, queue] of responseQueues.entries()) {
-    // Filtrar respuestas expiradas
     const validResponses = queue.filter(item => now - item.createdAt <= TTL_MS);
     if (validResponses.length === 0) {
       responseQueues.delete(sessionId);
     } else {
       responseQueues.set(sessionId, validResponses);
+    }
+  }
+  
+  // Purgar actividad de cliente antigua
+  for (const [sessionId, activity] of clientActivity.entries()) {
+    if (now - activity.lastMessageTime > TTL_MS) {
+      clientActivity.delete(sessionId);
     }
   }
 };
@@ -63,10 +79,40 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   console.log(`🔍 Buscando respuestas para sesión: ${session_id}`);
-  console.log(`📦 Colas actuales:`, Array.from(responseQueues.keys()));
-
+  
   const queue = responseQueues.get(session_id);
+  const activity = clientActivity.get(session_id);
+  const now = Date.now();
+  
+  // Debug info
+  if (activity) {
+    const timeSinceLastMessage = now - activity.lastMessageTime;
+    console.log(`📊 Actividad cliente: ${activity.messageCount} mensajes, último hace ${timeSinceLastMessage}ms`);
+  }
+  
   if (!queue || queue.length === 0) {
+    // Verificar si aún estamos en la ventana de espera
+    if (activity && (now - activity.lastMessageTime < CLIENT_WAIT_WINDOW_MS)) {
+      console.log(`⏳ Esperando respuesta del agente (${CLIENT_WAIT_WINDOW_MS - (now - activity.lastMessageTime)}ms restantes)`);
+      if (wantDebug) {
+        return json({ 
+          pending: true, 
+          waitTimeRemaining: CLIENT_WAIT_WINDOW_MS - (now - activity.lastMessageTime),
+          debug: debugLog.slice(-5) 
+        });
+      }
+      return json({
+        pending: true, 
+        waitTimeRemaining: CLIENT_WAIT_WINDOW_MS - (now - activity.lastMessageTime),
+      });
+    }
+    
+    // Fuera de la ventana de espera, limpiar actividad
+    if (activity) {
+      console.log(`⌛ Ventana de espera expirada para sesión ${session_id}`);
+      clientActivity.delete(session_id);
+    }
+    
     if (wantDebug) {
       return json({ pending: true, debug: debugLog.slice(-5) });
     }
@@ -82,14 +128,16 @@ export const GET: APIRoute = async ({ url }) => {
     return json({});
   }
 
-  // Marcar como consumida en lugar de eliminar
+  // Marcar como consumida y limpiar actividad del cliente (conversación completada)
   pendingResponse.consumed = true;
-  console.log(`✅ Respuesta marcada como consumida: ${pendingResponse.id} -> ${pendingResponse.message}`);
+  clientActivity.delete(session_id); // Reset para nueva conversación
+  
+  console.log(`✅ Respuesta enviada: ${pendingResponse.message}`);
+  console.log(`🔄 Actividad de cliente limpiada para nueva conversación`);
 
-  // Limpiar respuestas consumidas antiguas (opcional, para mantener memoria baja)
-  const now = Date.now();
+  // Limpiar respuestas consumidas
   const cleanQueue = queue.filter(item => 
-    !item.consumed || (now - item.createdAt < 30000) // Mantener consumidas por 30s
+    !item.consumed || (now - item.createdAt < 30000)
   );
   
   if (cleanQueue.length === 0) {
@@ -148,12 +196,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!session_id || typeof message !== 'string') {
       console.log(`❌ POST inválido - session_id: ${session_id}, message: ${message}`);
-      return json({ error: 'Invalid payload. Expected { session_id, message }. msg_id is optional.' }, 400);
+      return json({ error: 'Invalid payload. Expected { session_id, message }.' }, 400);
     }
 
-    console.log(`📨 POST válido recibido - session_id: ${session_id}, message: ${message}`);
+    console.log(`📨 Respuesta de n8n recibida - session_id: ${session_id}, message: ${message}`);
 
-    // Crear nueva respuesta con ID único
+    // Crear nueva respuesta del agente
     const responseItem: ResponseItem = {
       message,
       createdAt: Date.now(),
@@ -161,13 +209,13 @@ export const POST: APIRoute = async ({ request }) => {
       consumed: false
     };
 
-    // Agregar a la cola de la sesión
+    // Agregar respuesta a la cola
     const currentQueue = responseQueues.get(session_id) || [];
     currentQueue.push(responseItem);
     responseQueues.set(session_id, currentQueue);
     
-    console.log(`💾 Respuesta agregada a cola: ${responseItem.id}`);
-    console.log(`📊 Cola de sesión ${session_id} tiene ${currentQueue.length} respuesta(s)`);
+    console.log(`💾 Respuesta del agente guardada: ${responseItem.id}`);
+    console.log(`📊 Cola tiene ${currentQueue.length} respuesta(s) pendiente(s)`);
 
     return json({ ok: true });
   } catch (err) {
@@ -179,6 +227,31 @@ export const POST: APIRoute = async ({ request }) => {
       parsedBody: { error: String(err) },
       extracted: {}
     });
+    return json({ error: 'Invalid request' }, 400);
+  }
+};
+
+// Nuevo endpoint para que el cliente registre cuando envía mensajes
+export const PUT: APIRoute = async ({ request }) => {
+  try {
+    purgeOld();
+    const { session_id } = await request.json();
+    
+    if (!session_id) {
+      return json({ error: 'Missing session_id' }, 400);
+    }
+    
+    const now = Date.now();
+    const activity = clientActivity.get(session_id) || { lastMessageTime: 0, messageCount: 0 };
+    
+    activity.lastMessageTime = now;
+    activity.messageCount += 1;
+    clientActivity.set(session_id, activity);
+    
+    console.log(`📝 Cliente envió mensaje ${activity.messageCount} en sesión ${session_id}`);
+    
+    return json({ ok: true, messageCount: activity.messageCount });
+  } catch (err) {
     return json({ error: 'Invalid request' }, 400);
   }
 };
