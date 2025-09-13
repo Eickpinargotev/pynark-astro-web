@@ -91,6 +91,19 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     }
 
     try {
+      // Notificar actividad del usuario al backend (marca lastUserActivity y abre sesión si estaba cerrada)
+      try {
+        await fetch('/api/chat-response', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sessionId }),
+          // @ts-ignore - AbortSignal.timeout disponible en navegadores modernos
+          signal: AbortSignal.timeout(5000)
+        });
+      } catch (e) {
+        console.warn('No se pudo registrar actividad de usuario (PUT):', e);
+      }
+
       // Función para obtener la IP local real
       const getLocalIP = async (): Promise<string> => {
         try {
@@ -249,7 +262,28 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
           // Debug temporal - mostrar qué llega del polling
           console.log('🔍 Datos del polling:', data);
           
-          if (typeof data.message === 'string') {
+          const messagesFromServer: string[] = Array.isArray(data.messages)
+            ? data.messages
+            : (typeof data.message === 'string' ? [data.message] : []);
+
+          // Procesar mensajes especiales del sistema (p.ej. '/delete')
+          if (messagesFromServer.some(m => m === '/delete')) {
+            console.log('🧹 Recibido /delete: limpiando chat por inactividad');
+            // Limpiar UI y estado local
+            setMessages([]);
+            setTurn(1);
+            setIsWaitingResponse(false);
+            if (pollingInterval) {
+              clearInterval(pollingInterval);
+              setPollingInterval(null);
+            }
+            setChatState(prev => ({ ...prev, isTyping: false }));
+            return;
+          }
+
+          if (messagesFromServer.length > 0) {
+            const firstMsg = messagesFromServer[0];
+            console.log('✅ Respuesta recibida:', firstMsg);
             console.log('✅ Respuesta recibida:', data.message);
             
             // Mostrar "escribiendo..." por 1 segundo antes de mostrar el mensaje
@@ -258,14 +292,14 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
             // Simular escritura por 1 segundo
             await new Promise(resolve => setTimeout(resolve, 1000));
 
-            const botMessage: Message = {
+            const newBotMessages: Message[] = messagesFromServer.map(msg => ({
               id: uuidv4(),
-              content: data.message,
+              content: msg,
               isUser: false,
               timestamp: new Date()
-            };
+            }));
 
-            setMessages(prev => [...prev, botMessage]);
+            setMessages(prev => [...prev, ...newBotMessages]);
             setTurn(prev => prev + 1);
             setChatState(prev => ({ ...prev, isTyping: false }));
             
