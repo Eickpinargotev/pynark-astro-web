@@ -35,7 +35,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   const [inputValue, setInputValue] = useState('');
   const [sessionId] = useState(() => uuidv4());
   const [turn, setTurn] = useState(1);
-  const [pendingMessageId, setPendingMessageId] = useState<string | null>(null);
+  const [pendingMessages, setPendingMessages] = useState<Set<string>>(new Set());
   const [chatState, setChatState] = useState<ChatState>({
     isTyping: false,
     error: null,
@@ -59,10 +59,9 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   }, [messages, chatState.isTyping]);
 
   const sendMessage = async (content: string) => {
-    if (!content.trim() || chatState.isLoading || pendingMessageId) {
+    if (!content.trim() || pendingMessages.size >= 5) { // Límite de 5 mensajes concurrentes
       console.log('⚠️ Mensaje bloqueado:', { 
-        loading: chatState.isLoading, 
-        pending: pendingMessageId,
+        pending: pendingMessages.size,
         content: content.trim() 
       });
       return;
@@ -78,7 +77,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
-    setPendingMessageId(messageId);
+    setPendingMessages(prev => new Set([...prev, messageId]));
     setChatState(prev => ({ ...prev, isLoading: true, error: null }));
 
     // Check if we've exceeded max history
@@ -196,7 +195,11 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         setChatState(prev => ({ ...prev, isLoading: false }));
       } else {
         // Debe existir, porque hacemos fallback al origin; si no, marcamos error
-        setPendingMessageId(null);
+        setPendingMessages(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(messageId);
+          return newSet;
+        });
         setChatState(prev => ({ 
           ...prev, 
           isTyping: false,
@@ -224,7 +227,11 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         }
       }
 
-      setPendingMessageId(null);
+      setPendingMessages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(messageId);
+        return newSet;
+      });
       setChatState(prev => ({ ...prev, error: errorMessage, isLoading: false, isTyping: false }));
     }
   };
@@ -270,7 +277,11 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
             setMessages(prev => [...prev, botMessage]);
             setTurn(prev => prev + 1);
-            setPendingMessageId(null);
+            setPendingMessages(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(messageId);
+              return newSet;
+            });
             setChatState(prev => ({ ...prev, isTyping: false }));
             
             clearInterval(pollInterval);
@@ -297,7 +308,11 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         if (pollCount >= maxPolls) {
           console.error('❌ Máximo de intentos de polling alcanzado');
           clearInterval(pollInterval);
-          setPendingMessageId(null);
+          setPendingMessages(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(messageId);
+            return newSet;
+          });
           setChatState(prev => ({ 
             ...prev, 
             isTyping: false, 
@@ -314,7 +329,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     // Clear chat immediately
     setMessages([]);
     setTurn(1);
-    setPendingMessageId(null);
+    setPendingMessages(new Set());
     setChatState({ isTyping: false, error: null, isLoading: false });
 
     // Send delete command to server
