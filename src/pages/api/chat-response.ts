@@ -13,13 +13,14 @@ type ResponseItem = {
 type SessionInfo = {
   lastPollTime: number; // Última vez que el cliente hizo polling
   lastResponseTime: number; // Última vez que llegó respuesta del agente
-  hasRecentPolling: boolean; // Si el cliente está haciendo polling activamente
+  isWaitingForResponse: boolean; // Si la sesión está esperando respuesta del agente
+  firstPollTime: number; // Primera vez que empezó el polling en esta sesión
 };
 
 const responseQueues = new Map<string, ResponseItem[]>();
 const sessionTracking = new Map<string, SessionInfo>();
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
-const ACTIVE_POLLING_WINDOW_MS = 45 * 1000; // 45 segundos de polling activo
+const MAX_WAIT_TIME_MS = 60 * 1000; // 60 segundos máximo de espera
 const POLLING_FREQUENCY_MS = 2 * 1000; // Esperamos polling cada 2 segundos
 
 const purgeOld = () => {
@@ -82,41 +83,64 @@ export const GET: APIRoute = async ({ url }) => {
 
   const now = Date.now();
   
-  // Actualizar tracking de polling
+  // Actualizar o crear tracking de sesión
   const sessionInfo = sessionTracking.get(session_id) || {
-    lastPollTime: 0,
+    lastPollTime: now,
     lastResponseTime: 0,
-    hasRecentPolling: false
+    isWaitingForResponse: false,
+    firstPollTime: now
   };
   
   const timeSinceLastPoll = now - sessionInfo.lastPollTime;
+  const timeSinceFirstPoll = now - sessionInfo.firstPollTime;
+  
+  // Actualizar tiempos
   sessionInfo.lastPollTime = now;
-  sessionInfo.hasRecentPolling = timeSinceLastPoll < (POLLING_FREQUENCY_MS * 3); // Tolerancia de 3x la frecuencia esperada
+  
+  // Si es un polling regular (cada 2-6 segundos), marcar como esperando respuesta
+  if (timeSinceLastPoll < (POLLING_FREQUENCY_MS * 3) && timeSinceLastPoll > 0) {
+    sessionInfo.isWaitingForResponse = true;
+  }
+  
+  // Si es la primera vez en mucho tiempo, reiniciar el tracking
+  if (timeSinceLastPoll > 30000) { // 30 segundos sin polling
+    sessionInfo.firstPollTime = now;
+    sessionInfo.isWaitingForResponse = true; // Asumir que está esperando respuesta
+  }
+
   sessionTracking.set(session_id, sessionInfo);
 
-  console.log(`🔍 GET para sesión: ${session_id}, polling activo: ${sessionInfo.hasRecentPolling}`);
+  console.log(`🔍 GET para sesión: ${session_id}`);
+  console.log(`📊 Esperando respuesta: ${sessionInfo.isWaitingForResponse}, tiempo desde primer poll: ${timeSinceFirstPoll}ms`);
   
   const queue = responseQueues.get(session_id);
   
   if (!queue || queue.length === 0) {
-    // Si el cliente está haciendo polling activamente, consideramos que está esperando respuesta
-    if (sessionInfo.hasRecentPolling) {
-      const waitTime = Math.max(0, ACTIVE_POLLING_WINDOW_MS - (now - sessionInfo.lastPollTime));
-      console.log(`⏳ Cliente haciendo polling activo, esperando respuesta...`);
+    // Verificar si la sesión está esperando respuesta y dentro del tiempo límite
+    if (sessionInfo.isWaitingForResponse && timeSinceFirstPoll < MAX_WAIT_TIME_MS) {
+      const waitTimeRemaining = Math.max(0, MAX_WAIT_TIME_MS - timeSinceFirstPoll);
+      console.log(`⏳ Sesión esperando respuesta, tiempo restante: ${waitTimeRemaining}ms`);
       
       if (wantDebug) {
         return json({ 
           pending: true, 
-          waitTimeRemaining: waitTime,
-          activePolling: true,
+          waitTimeRemaining,
+          timeSinceFirstPoll,
           debug: debugLog.slice(-5) 
         });
       }
       return json({ 
         pending: true, 
-        waitTimeRemaining: waitTime,
-        activePolling: true
+        waitTimeRemaining,
+        timeSinceFirstPoll
       });
+    }
+    
+    // Tiempo de espera agotado, limpiar sesión
+    if (sessionInfo.isWaitingForResponse && timeSinceFirstPoll >= MAX_WAIT_TIME_MS) {
+      console.log(`⌛ Tiempo de espera agotado para sesión ${session_id}`);
+      sessionInfo.isWaitingForResponse = false;
+      sessionTracking.set(session_id, sessionInfo);
     }
     
     if (wantDebug) {
@@ -134,23 +158,15 @@ export const GET: APIRoute = async ({ url }) => {
     return json({ pending: true });
   }
 
-  // Marcar como consumida y actualizar tracking
+  // Marcar como consumida y resetear tracking de sesión
   pendingResponse.consumed = true;
   sessionInfo.lastResponseTime = now;
-  sessionInfo.hasRecentPolling = false; // Reset después de entregar respuesta
+  sessionInfo.isWaitingForResponse = false; // Ya no espera respuesta
+  sessionInfo.firstPollTime = now; // Reset para siguiente conversación
+  sessionTracking.set(session_id, sessionInfo);
   
   console.log(`✅ Respuesta enviada: ${pendingResponse.message}`);
-
-  // Limpiar respuestas consumidas
-  const cleanQueue = queue.filter(item => 
-    !item.consumed || (now - item.createdAt < 30000)
-  );
-  
-  if (cleanQueue.length === 0) {
-    responseQueues.delete(session_id);
-  } else {
-    responseQueues.set(session_id, cleanQueue);
-  }
+  console.log(`🔄 Sesión reseteada para nueva conversación`);
 
   if (wantDebug) {
     return json({ message: pendingResponse.message, debug: debugLog.slice(-5) });
@@ -207,10 +223,13 @@ export const POST: APIRoute = async ({ request }) => {
 
     console.log(`📨 Respuesta de n8n recibida - session_id: ${session_id}, message: ${message}`);
 
-    // Verificar si hay una sesión con polling activo
+    // Verificar si hay una sesión esperando respuesta
     const sessionInfo = sessionTracking.get(session_id);
     if (sessionInfo) {
-      console.log(`📊 Sesión tiene polling activo: ${sessionInfo.hasRecentPolling}`);
+      console.log(`📊 Sesión esperando respuesta: ${sessionInfo.isWaitingForResponse}`);
+      console.log(`📊 Tiempo desde primer poll: ${Date.now() - sessionInfo.firstPollTime}ms`);
+    } else {
+      console.log(`⚠️ No hay tracking de sesión para ${session_id}, creando respuesta de todas formas`);
     }
 
     // Crear nueva respuesta del agente
@@ -243,7 +262,7 @@ export const POST: APIRoute = async ({ request }) => {
   }
 };
 
-// Mantener el endpoint PUT por compatibilidad, pero ya no es necesario
+// Mantener el endpoint PUT por compatibilidad
 export const PUT: APIRoute = async ({ request }) => {
   try {
     purgeOld();
@@ -257,13 +276,18 @@ export const PUT: APIRoute = async ({ request }) => {
     const sessionInfo = sessionTracking.get(session_id) || {
       lastPollTime: now,
       lastResponseTime: 0,
-      hasRecentPolling: true
+      isWaitingForResponse: true,
+      firstPollTime: now
     };
     
-    sessionInfo.hasRecentPolling = true;
+    // Forzar estado de espera cuando se llama PUT
+    sessionInfo.isWaitingForResponse = true;
+    if (sessionInfo.firstPollTime === 0) {
+      sessionInfo.firstPollTime = now;
+    }
     sessionTracking.set(session_id, sessionInfo);
     
-    console.log(`📝 Actividad de cliente registrada para sesión ${session_id}`);
+    console.log(`📝 Sesión marcada como esperando respuesta: ${session_id}`);
     
     return json({ ok: true });
   } catch (err) {
