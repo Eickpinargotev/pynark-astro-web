@@ -33,6 +33,9 @@ const SESSION_GRACE_MS = 30 * 1000; // tiempo de gracia para limpiar una vez env
 const MAX_WAIT_TIME_MS = 60 * 1000; // 60 segundos máximo de espera para "pending"
 const POLLING_FREQUENCY_MS = 2 * 1000; // Esperamos polling cada 2 segundos
 const DELETE_TRIGGER = '/delete';
+// NUEVO: long-poll por request para evitar que el usuario tenga que enviar otro mensaje
+const LONG_POLL_MS = 25 * 1000; // hasta 25s por GET
+const SLEEP_MS = 400; // intervalo de comprobación durante long-poll
 
 // Helpers
 const getOrInitSession = (session_id: string, now: number): SessionInfo => {
@@ -50,6 +53,9 @@ const getOrInitSession = (session_id: string, now: number): SessionInfo => {
   sessionTracking.set(session_id, info);
   return info;
 };
+
+// NUEVO: sleep para long-poll
+const sleep = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
 const enqueueResponse = (session_id: string, message: string, type: 'agent' | 'system' = 'agent'): ResponseItem => {
   const item: ResponseItem = {
@@ -137,6 +143,8 @@ const json = (data: unknown, init?: number | ResponseInit) =>
     status: typeof init === 'number' ? init : init?.status ?? 200,
     headers: {
       'Content-Type': 'application/json; charset=utf-8',
+      // NUEVO: evitar cache para que el cliente vea el mensaje en cuanto llegue
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
       ...(typeof init === 'object' ? init.headers : {})
     }
   });
@@ -205,9 +213,45 @@ export const GET: APIRoute = async ({ url }) => {
     closeSession(session_id, now);
   }
 
-  // No hay nada que entregar - aplicar ventana de espera "pending"
+  // NUEVO: long-poll mientras esperamos respuesta del agente
   if (sessionInfo.isWaitingForResponse && timeSinceFirstPoll < MAX_WAIT_TIME_MS) {
-    const waitTimeRemaining = Math.max(0, MAX_WAIT_TIME_MS - timeSinceFirstPoll);
+    let waitTimeRemaining = Math.max(0, MAX_WAIT_TIME_MS - timeSinceFirstPoll);
+    const budget = Math.min(LONG_POLL_MS, waitTimeRemaining);
+
+    if (budget > 0) {
+      const deadline = Date.now() + budget;
+      while (Date.now() < deadline) {
+        const q = responseQueues.get(session_id) || [];
+        const hasNew = q.some(i => !i.consumed);
+        if (hasNew) {
+          // Reutilizamos la misma lógica de entrega múltiple
+          const toDeliver = q.filter(i => !i.consumed);
+          toDeliver.forEach(i => (i.consumed = true));
+          const now2 = Date.now();
+          sessionInfo.lastResponseTime = now2;
+          sessionInfo.isWaitingForResponse = false;
+          sessionInfo.firstPollTime = now2;
+          sessionTracking.set(session_id, sessionInfo);
+          const payload = {
+            message: toDeliver[0]?.message,
+            messages: toDeliver.map(p => p.message),
+            count: toDeliver.length,
+            ...(wantDebug ? { debug: debugLog.slice(-5) } : {})
+          };
+          console.log(`✅ Enviando ${toDeliver.length} mensaje(s) (long-poll)`);
+          return json(payload);
+        }
+        await sleep(SLEEP_MS);
+      }
+      // timeout del long-poll; actualizamos el tiempo restante y devolvemos pending
+      waitTimeRemaining = Math.max(0, MAX_WAIT_TIME_MS - (Date.now() - sessionInfo.firstPollTime));
+      if (wantDebug) {
+        return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll, debug: debugLog.slice(-5) });
+      }
+      return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll });
+    }
+
+    // Sin presupuesto de espera (queda poco en la ventana): devolvemos pending inmediatamente
     if (wantDebug) {
       return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll, debug: debugLog.slice(-5) });
     }
