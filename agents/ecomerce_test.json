@@ -1,0 +1,10 @@
+{
+  "id": "ecomerce_test",
+  "name": "E-commerce Test",
+  "webhookUrl": "https://paneln8n.erickpinargote.com/webhook/pynark_ecomerce",
+  "responseUrl": null,
+  "avatarPath": "/assets/pynark_favicon.png",
+  "requestTimeoutMs": 20000,
+  "maxHistory": 50,
+  "resetMessage": "Has superado el límite de historial. Empecemos de nuevo…"
+}

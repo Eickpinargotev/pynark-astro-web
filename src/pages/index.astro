@@ -1,0 +1,374 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Chat from '../components/Chat.tsx';
+import ChatSimulation from '../components/ChatSimulation.tsx';
+
+// Load agent configuration
+import agentConfig from '../../agents/ecomerce_test.json';
+---
+
+<Layout title="Pynark Automation - Chatbots que Convierten">
+  <!-- Hero Section -->
+  <section class="py-20 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto text-center">
+      <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-bold text-slate-900 dark:text-white mb-6">
+        Chatbots que convierten <br class="hidden sm:block">
+        <span class="bg-gradient-to-r from-primary-600 to-secondary-600 bg-clip-text text-transparent">
+          visitas en ventas y citas
+        </span>
+      </h1>
+      <p class="text-xl text-slate-600 dark:text-slate-300 mb-12 max-w-3xl mx-auto">
+        Especialistas en agentes de servicio al cliente que funcionan 24/7 para hacer crecer tu negocio
+      </p>
+    </div>
+  </section>
+
+  <!-- Chat Section -->
+  <section class="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50/50 to-secondary-50/50 dark:from-primary-900/10 dark:to-secondary-900/10">
+    <div class="max-w-7xl mx-auto text-center">
+      <div id="chat-section">
+        <button 
+          id="show-agents-btn"
+          class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+        >
+          PRUEBA NUESTROS AGENTES
+        </button>
+        
+        <div id="agent-buttons" class="hidden mt-8 space-y-4">
+          <button 
+            id="ecommerce-btn"
+            class="inline-flex items-center px-6 py-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium rounded-xl shadow-lg hover:shadow-xl border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-300"
+          >
+            E-commerce Test
+          </button>
+        </div>
+        
+        <div id="chat-container" class="hidden mt-8">
+          <Chat client:load agentConfig={agentConfig} />
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How We Work Section -->
+  <section class="py-20 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-6">
+          Cómo trabajamos
+        </h2>
+      </div>
+      
+      <div class="relative">
+        <!-- Timeline line - Desktop -->
+        <div class="hidden md:block absolute left-1/2 transform -translate-x-px h-full w-0.5 bg-gradient-to-b from-primary-400 to-secondary-400"></div>
+        
+        <!-- Timeline line - Mobile -->
+        <div class="md:hidden absolute left-8 top-0 h-full w-0.5 bg-gradient-to-b from-primary-400 to-secondary-400"></div>
+        
+        <!-- Timeline items -->
+        <div class="space-y-12 md:space-y-16">
+          <!-- Step 1 -->
+          <div class="relative flex items-center">
+            <!-- Mobile Layout -->
+            <div class="md:hidden flex items-start">
+              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg z-10">
+                <span class="text-white font-bold">1</span>
+              </div>
+              <div class="ml-6 flex-1">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                    Diagnóstico
+                  </h3>
+                  <p class="text-slate-600 dark:text-slate-300">
+                    Sesión de 30-45 minutos para entender tu negocio y necesidades específicas
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Desktop Layout -->
+            <div class="hidden md:flex md:items-center w-full">
+              <div class="flex-1 pr-8 text-right">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                    Diagnóstico
+                  </h3>
+                  <p class="text-slate-600 dark:text-slate-300">
+                    Sesión de 30-45 minutos para entender tu negocio y necesidades específicas
+                  </p>
+                </div>
+              </div>
+              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg">
+                <span class="text-white font-bold">1</span>
+              </div>
+              <div class="flex-1 pl-8"></div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="relative flex items-center">
+            <!-- Mobile Layout -->
+            <div class="md:hidden flex items-start">
+              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg z-10">
+                <span class="text-white font-bold">2</span>
+              </div>
+              <div class="ml-6 flex-1">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                    Setup de vertical
+                  </h3>
+                  <p class="text-slate-600 dark:text-slate-300">
+                    Configuración personalizada del agente en 2-5 días según tu industria
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Desktop Layout -->
+            <div class="hidden md:flex md:items-center w-full">
+              <div class="flex-1 pr-8"></div>
+              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg">
+                <span class="text-white font-bold">2</span>
+              </div>
+              <div class="flex-1 pl-8">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                    Setup de vertical
+                  </h3>
+                  <p class="text-slate-600 dark:text-slate-300">
+                    Configuración personalizada del agente en 2-5 días según tu industria
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="relative flex items-center">
+            <!-- Mobile Layout -->
+            <div class="md:hidden flex items-start">
+              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg z-10">
+                <span class="text-white font-bold">3</span>
+              </div>
+              <div class="ml-6 flex-1">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                    Go-live con monitoreo
+                  </h3>
+                  <p class="text-slate-600 dark:text-slate-300">
+                    Lanzamiento con supervisión activa para garantizar el rendimiento óptimo
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Desktop Layout -->
+            <div class="hidden md:flex md:items-center w-full">
+              <div class="flex-1 pr-8 text-right">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                    Go-live con monitoreo
+                  </h3>
+                  <p class="text-slate-600 dark:text-slate-300">
+                    Lanzamiento con supervisión activa para garantizar el rendimiento óptimo
+                  </p>
+                </div>
+              </div>
+              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg">
+                <span class="text-white font-bold">3</span>
+              </div>
+              <div class="flex-1 pl-8"></div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="relative flex items-center">
+            <!-- Mobile Layout -->
+            <div class="md:hidden flex items-start">
+              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg z-10">
+                <span class="text-white font-bold">4</span>
+              </div>
+              <div class="ml-6 flex-1">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                    Optimización mensual
+                  </h3>
+                  <p class="text-slate-600 dark:text-slate-300">
+                    Reportes detallados con insights y mejoras continuas del rendimiento
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Desktop Layout -->
+            <div class="hidden md:flex md:items-center w-full">
+              <div class="flex-1 pr-8"></div>
+              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg">
+                <span class="text-white font-bold">4</span>
+              </div>
+              <div class="flex-1 pl-8">
+                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
+                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
+                    Optimización mensual
+                  </h3>
+                  <p class="text-slate-600 dark:text-slate-300">
+                    Reportes detallados con insights y mejoras continuas del rendimiento
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Examples Section -->
+  <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-50 to-primary-50/30 dark:from-slate-900 dark:to-primary-900/10">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-16">
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-6">
+          Ejemplos en acción
+        </h2>
+        <p class="text-xl text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+          Descubre cómo nuestros agentes manejan diferentes situaciones reales de negocio
+        </p>
+      </div>
+      
+      <ChatSimulation client:load />
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section id="contact" class="py-20 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-4xl mx-auto">
+      <div class="text-center mb-12">
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-6">
+          Contáctanos
+        </h2>
+        <p class="text-xl text-slate-600 dark:text-slate-300">
+          ¿Listo para transformar tu atención al cliente? Hablemos
+        </p>
+      </div>
+      
+      <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 p-8">
+        <form class="space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Nombre
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                required
+                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="Tu nombre completo"
+              />
+            </div>
+            <div>
+              <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                placeholder="tu@email.com"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label for="company" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Empresa
+            </label>
+            <input
+              type="text"
+              id="company"
+              name="company"
+              class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              placeholder="Nombre de tu empresa"
+            />
+          </div>
+          
+          <div>
+            <label for="message" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              Mensaje
+            </label>
+            <textarea
+              id="message"
+              name="message"
+              rows="4"
+              required
+              class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
+              placeholder="Cuéntanos sobre tu proyecto y cómo podemos ayudarte..."
+            ></textarea>
+          </div>
+          
+          <button
+            type="submit"
+            class="w-full px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
+          >
+            Enviar mensaje
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <script>
+    // Prevent initial unwanted scroll
+    document.addEventListener('DOMContentLoaded', () => {
+      // Reset scroll position if no specific hash is intended
+      if (!window.location.hash || window.location.hash === '#') {
+        window.scrollTo(0, 0);
+      }
+    });
+
+    // Chat section interactivity
+    const showAgentsBtn = document.getElementById('show-agents-btn');
+    const agentButtons = document.getElementById('agent-buttons');
+    const ecommerceBtn = document.getElementById('ecommerce-btn');
+    const chatContainer = document.getElementById('chat-container');
+
+    showAgentsBtn?.addEventListener('click', () => {
+      showAgentsBtn.style.display = 'none';
+      agentButtons?.classList.remove('hidden');
+    });
+
+    ecommerceBtn?.addEventListener('click', () => {
+      agentButtons?.classList.add('hidden');
+      chatContainer?.classList.remove('hidden');
+    });
+
+    // Form submission (placeholder)
+    const contactForm = document.querySelector('form');
+    contactForm?.addEventListener('submit', (e) => {
+      e.preventDefault();
+      alert('¡Gracias por tu mensaje! Te contactaremos pronto.');
+    });
+  </script>
+
+  <style>
+    @keyframes fade-in {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .animate-fade-in {
+      animation: fade-in 0.5s ease-out forwards;
+    }
+    
+  </style>
+</Layout>
