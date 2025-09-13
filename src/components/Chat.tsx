@@ -35,7 +35,8 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   const [inputValue, setInputValue] = useState('');
   const [sessionId] = useState(() => uuidv4());
   const [turn, setTurn] = useState(1);
-  const [pendingMessages, setPendingMessages] = useState<Set<string>>(new Set());
+  const [isWaitingResponse, setIsWaitingResponse] = useState(false);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [chatState, setChatState] = useState<ChatState>({
     isTyping: false,
     error: null,
@@ -59,11 +60,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   }, [messages, chatState.isTyping]);
 
   const sendMessage = async (content: string) => {
-    if (!content.trim() || pendingMessages.size >= 5) { // Límite de 5 mensajes concurrentes
-      console.log('⚠️ Mensaje bloqueado:', { 
-        pending: pendingMessages.size,
-        content: content.trim() 
-      });
+    if (!content.trim()) {
       return;
     }
 
@@ -77,8 +74,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
-    setPendingMessages(prev => new Set([...prev, messageId]));
-    setChatState(prev => ({ ...prev, isLoading: true, error: null }));
+    setChatState(prev => ({ ...prev, error: null }));
 
     // Check if we've exceeded max history
     if (messages.length >= agentConfig.maxHistory) {
@@ -91,7 +87,6 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         timestamp: new Date()
       };
       setMessages([resetMessage]);
-      setChatState(prev => ({ ...prev, isLoading: false }));
       return;
     }
 
@@ -191,19 +186,14 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
       // Usar siempre el callback/polling para mostrar la respuesta del bot
       if (callbackUrl) {
-        startPollingForResponse(messageId, callbackUrl);
-        setChatState(prev => ({ ...prev, isLoading: false }));
+        // Solo iniciar polling si no hay uno activo
+        if (!pollingInterval && !isWaitingResponse) {
+          setIsWaitingResponse(true);
+          startPollingForResponse(callbackUrl);
+        }
       } else {
-        // Debe existir, porque hacemos fallback al origin; si no, marcamos error
-        setPendingMessages(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(messageId);
-          return newSet;
-        });
         setChatState(prev => ({ 
           ...prev, 
-          isTyping: false,
-          isLoading: false,
           error: 'No hay endpoint de callback configurado.'
         }));
       }
@@ -227,29 +217,25 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         }
       }
 
-      setPendingMessages(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(messageId);
-        return newSet;
-      });
-      setChatState(prev => ({ ...prev, error: errorMessage, isLoading: false, isTyping: false }));
+      setChatState(prev => ({ ...prev, error: errorMessage }));
     }
   };
 
-  // Polling para obtener respuestas pendientes
-  const startPollingForResponse = (messageId: string, baseUrl?: string) => {
+  // Polling para obtener respuestas pendientes (por sesión, no por mensaje)
+  const startPollingForResponse = (baseUrl?: string) => {
     let pollCount = 0;
     const maxPolls = 60; // Máximo 60 polls (2 minutos)
     
-    const pollInterval = setInterval(async () => {
+    const interval = setInterval(async () => {
       pollCount++;
-      console.log(`🔄 Polling ${pollCount}/${maxPolls} para mensaje ${messageId}`);
+      console.log(`🔄 Polling ${pollCount}/${maxPolls} para sesión ${sessionId}`);
       
       try {
+        // Polling general por sesión, sin msg_id específico
         const pollUrl = baseUrl 
-          ? `${baseUrl}?session_id=${encodeURIComponent(sessionId)}&msg_id=${encodeURIComponent(messageId)}`
-          : `/api/chat-response?session_id=${sessionId}&msg_id=${messageId}`;
-        const response = await fetch(pollUrl + '&debug=1', {
+          ? `${baseUrl}?session_id=${encodeURIComponent(sessionId)}&debug=1`
+          : `/api/chat-response?session_id=${sessionId}&debug=1`;
+        const response = await fetch(pollUrl, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -262,7 +248,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
           if (typeof data.message === 'string') {
             console.log('✅ Respuesta recibida:', data.message);
             
-            // Ahora SÍ mostramos "escribiendo..." por 1 segundo antes de mostrar el mensaje
+            // Mostrar "escribiendo..." por 1 segundo antes de mostrar el mensaje
             setChatState(prev => ({ ...prev, isTyping: true }));
             
             // Simular escritura por 1 segundo
@@ -277,65 +263,46 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
             setMessages(prev => [...prev, botMessage]);
             setTurn(prev => prev + 1);
-            setPendingMessages(prev => {
-              const newSet = new Set(prev);
-              newSet.delete(messageId);
-              // Solo quitar "escribiendo..." si no hay más mensajes pendientes
-              if (newSet.size === 0) {
-                setChatState(prev => ({ ...prev, isTyping: false }));
-              }
-              return newSet;
-            });
+            setIsWaitingResponse(false);
+            setChatState(prev => ({ ...prev, isTyping: false }));
             
-            clearInterval(pollInterval);
+            clearInterval(interval);
+            setPollingInterval(null);
             return;
           }
-          // No mostramos mensajes de debug en la UI
         } else {
           console.warn(`⚠️ Poll ${pollCount} falló:`, response.status);
-          try {
-            const text = await response.text();
-            setMessages(prev => [
-              ...prev,
-              {
-                id: uuidv4(),
-                content: `POLL ERROR (${response.status} ${response.statusText}):\n${text.substring(0, 1000)}`,
-                isUser: false,
-                timestamp: new Date()
-              }
-            ]);
-          } catch {}
         }
 
         // Stop polling if max attempts reached
         if (pollCount >= maxPolls) {
-          console.error(`❌ Timeout para mensaje ${messageId}`);
-          clearInterval(pollInterval);
-          setPendingMessages(prev => {
-            const newSet = new Set(prev);
-            newSet.delete(messageId);
-            // Solo mostrar error si no quedan mensajes pendientes
-            if (newSet.size === 0) {
-              setChatState(prev => ({ 
-                ...prev, 
-                isTyping: false, 
-                error: 'Tiempo de espera agotado. El agente no respondió.' 
-              }));
-            }
-            return newSet;
-          });
+          console.error(`❌ Timeout para sesión ${sessionId}`);
+          clearInterval(interval);
+          setPollingInterval(null);
+          setIsWaitingResponse(false);
+          setChatState(prev => ({ 
+            ...prev, 
+            isTyping: false, 
+            error: 'Tiempo de espera agotado. El agente no respondió.' 
+          }));
         }
       } catch (error) {
         console.error('💥 Error en polling:', error);
       }
     }, 2000); // Poll every 2 seconds
+
+    setPollingInterval(interval);
   };
 
   const clearChat = async () => {
     // Clear chat immediately
     setMessages([]);
     setTurn(1);
-    setPendingMessages(new Set());
+    setIsWaitingResponse(false);
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
     setChatState({ isTyping: false, error: null, isLoading: false });
 
     // Send delete command to server

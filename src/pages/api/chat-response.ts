@@ -42,15 +42,31 @@ export const GET: APIRoute = async ({ url }) => {
   const msg_id = url.searchParams.get('msg_id') ?? '';
   const wantDebug = url.searchParams.get('debug') === '1';
 
-  if (!session_id || !msg_id) {
+  if (!session_id) {
     if (wantDebug) {
-      return json({ error: 'Missing session_id or msg_id', debug: debugLog.slice(-5) }, 400);
+      return json({ error: 'Missing session_id', debug: debugLog.slice(-5) }, 400);
     }
-    return json({ error: 'Missing session_id or msg_id' }, 400);
+    return json({ error: 'Missing session_id' }, 400);
   }
 
-  const key = `${session_id}:${msg_id}`;
-  const found = responseStore.get(key);
+  // Si hay msg_id, buscar mensaje específico, si no, buscar cualquier respuesta para la sesión
+  let found;
+  if (msg_id) {
+    const key = `${session_id}:${msg_id}`;
+    found = responseStore.get(key);
+    if (found) {
+      responseStore.delete(key);
+    }
+  } else {
+    // Buscar cualquier respuesta para esta sesión
+    for (const [key, value] of responseStore.entries()) {
+      if (key.startsWith(`${session_id}:`)) {
+        found = value;
+        responseStore.delete(key);
+        break;
+      }
+    }
+  }
   if (!found) {
     // Not ready yet; return an empty JSON so client continues polling safely
     if (wantDebug) {
@@ -59,8 +75,6 @@ export const GET: APIRoute = async ({ url }) => {
     return json({});
   }
 
-  // One-time read: return and delete to avoid duplicates
-  responseStore.delete(key);
   if (wantDebug) {
     return json({ message: found.message, debug: debugLog.slice(-5) });
   }
