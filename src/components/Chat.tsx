@@ -289,7 +289,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         if (response.ok) {
           const data = await response.json();
           
-          if (data.message) {
+          if (typeof data.message === 'string') {
             console.log('✅ Respuesta recibida:', data.message);
             
             // Simulate typing delay for realism
