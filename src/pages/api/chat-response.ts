@@ -7,6 +7,8 @@ type ResponseItem = {
   createdAt: number; 
   id: string;
   consumed: boolean;
+  // tipo de mensaje para diferenciar sistema vs agente
+  type?: 'agent' | 'system';
 };
 
 // Tracking de sesiones activas - detectar automáticamente cuando hay actividad
@@ -15,18 +17,69 @@ type SessionInfo = {
   lastResponseTime: number; // Última vez que llegó respuesta del agente
   isWaitingForResponse: boolean; // Si la sesión está esperando respuesta del agente
   firstPollTime: number; // Primera vez que empezó el polling en esta sesión
+  // NUEVO: actividad del usuario y cierre de sesión
+  lastUserActivity: number; // Última vez que el usuario envió un mensaje
+  sessionClosed: boolean;   // Si la sesión está cerrada por inactividad
+  closedAt: number;         // Cuándo se cerró
 };
 
 const responseQueues = new Map<string, ResponseItem[]>();
 const sessionTracking = new Map<string, SessionInfo>();
+
+// Config
 const TTL_MS = 5 * 60 * 1000; // 5 minutes
-const MAX_WAIT_TIME_MS = 60 * 1000; // 60 segundos máximo de espera
+const INACTIVITY_TTL_MS = TTL_MS; // 5 minutos sin actividad del usuario => /delete
+const SESSION_GRACE_MS = 30 * 1000; // tiempo de gracia para limpiar una vez enviado /delete
+const MAX_WAIT_TIME_MS = 60 * 1000; // 60 segundos máximo de espera para "pending"
 const POLLING_FREQUENCY_MS = 2 * 1000; // Esperamos polling cada 2 segundos
+const DELETE_TRIGGER = '/delete';
+
+// Helpers
+const getOrInitSession = (session_id: string, now: number): SessionInfo => {
+  const existing = sessionTracking.get(session_id);
+  if (existing) return existing;
+  const info: SessionInfo = {
+    lastPollTime: now,
+    lastResponseTime: 0,
+    isWaitingForResponse: false,
+    firstPollTime: now,
+    lastUserActivity: 0, // el frontend debe marcar actividad vía PUT al mandar un mensaje
+    sessionClosed: false,
+    closedAt: 0
+  };
+  sessionTracking.set(session_id, info);
+  return info;
+};
+
+const enqueueResponse = (session_id: string, message: string, type: 'agent' | 'system' = 'agent'): ResponseItem => {
+  const item: ResponseItem = {
+    message,
+    type,
+    createdAt: Date.now(),
+    id: `${session_id}:${Date.now()}:${Math.random().toString(36).substr(2, 9)}`,
+    consumed: false
+  };
+  const q = responseQueues.get(session_id) || [];
+  q.push(item);
+  responseQueues.set(session_id, q);
+  return item;
+};
+
+const closeSession = (session_id: string, now: number) => {
+  const info = getOrInitSession(session_id, now);
+  if (!info.sessionClosed) {
+    enqueueResponse(session_id, DELETE_TRIGGER, 'system');
+    info.sessionClosed = true;
+    info.closedAt = now;
+    sessionTracking.set(session_id, info);
+    console.log(`🧹 Sesión ${session_id} cerrada por inactividad, encolado "${DELETE_TRIGGER}"`);
+  }
+};
 
 const purgeOld = () => {
   const now = Date.now();
   
-  // Purgar respuestas antiguas
+  // Purgar respuestas antiguas (seguridad/limpieza)
   for (const [sessionId, queue] of responseQueues.entries()) {
     const validResponses = queue.filter(item => now - item.createdAt <= TTL_MS);
     if (validResponses.length === 0) {
@@ -36,8 +89,27 @@ const purgeOld = () => {
     }
   }
   
-  // Purgar tracking de sesiones antiguas
+  // Auto-cierre por inactividad y limpieza diferida
   for (const [sessionId, info] of sessionTracking.entries()) {
+    // Cerrar si no hay actividad del usuario por INACTIVITY_TTL_MS
+    if (!info.sessionClosed && info.lastUserActivity > 0 && (now - info.lastUserActivity) > INACTIVITY_TTL_MS) {
+      closeSession(sessionId, now);
+    }
+
+    // Limpiar tracking si la sesión está cerrada y ya se entregó (o pasó gracia)
+    if (info.sessionClosed) {
+      const queue = responseQueues.get(sessionId) || [];
+      const hasUnconsumed = queue.some(i => !i.consumed);
+      const graceExpired = (now - info.closedAt) > SESSION_GRACE_MS;
+      if (!hasUnconsumed && graceExpired) {
+        sessionTracking.delete(sessionId);
+        responseQueues.delete(sessionId);
+        console.log(`🧽 Sesión ${sessionId} purgada tras cierre`);
+      }
+      continue;
+    }
+
+    // Purgar tracking de sesiones sin polling prolongado (fallback)
     if (now - info.lastPollTime > TTL_MS) {
       sessionTracking.delete(sessionId);
     }
@@ -82,14 +154,7 @@ export const GET: APIRoute = async ({ url }) => {
   }
 
   const now = Date.now();
-  
-  // Actualizar o crear tracking de sesión
-  const sessionInfo = sessionTracking.get(session_id) || {
-    lastPollTime: now,
-    lastResponseTime: 0,
-    isWaitingForResponse: false,
-    firstPollTime: now
-  };
+  const sessionInfo = getOrInitSession(session_id, now);
   
   const timeSinceLastPoll = now - sessionInfo.lastPollTime;
   const timeSinceFirstPoll = now - sessionInfo.firstPollTime;
@@ -111,67 +176,54 @@ export const GET: APIRoute = async ({ url }) => {
   sessionTracking.set(session_id, sessionInfo);
 
   console.log(`🔍 GET para sesión: ${session_id}`);
-  console.log(`📊 Esperando respuesta: ${sessionInfo.isWaitingForResponse}, tiempo desde primer poll: ${timeSinceFirstPoll}ms`);
+  console.log(`📊 Esperando respuesta: ${sessionInfo.isWaitingForResponse}, tiempo desde primer poll: ${timeSinceFirstPoll}ms, cerrada: ${sessionInfo.sessionClosed}`);
   
-  const queue = responseQueues.get(session_id);
+  const queue = responseQueues.get(session_id) || [];
   
-  if (!queue || queue.length === 0) {
-    // Verificar si la sesión está esperando respuesta y dentro del tiempo límite
-    if (sessionInfo.isWaitingForResponse && timeSinceFirstPoll < MAX_WAIT_TIME_MS) {
-      const waitTimeRemaining = Math.max(0, MAX_WAIT_TIME_MS - timeSinceFirstPoll);
-      console.log(`⏳ Sesión esperando respuesta, tiempo restante: ${waitTimeRemaining}ms`);
-      
-      if (wantDebug) {
-        return json({ 
-          pending: true, 
-          waitTimeRemaining,
-          timeSinceFirstPoll,
-          debug: debugLog.slice(-5) 
-        });
-      }
-      return json({ 
-        pending: true, 
-        waitTimeRemaining,
-        timeSinceFirstPoll
-      });
-    }
-    
-    // Tiempo de espera agotado, limpiar sesión
-    if (sessionInfo.isWaitingForResponse && timeSinceFirstPoll >= MAX_WAIT_TIME_MS) {
-      console.log(`⌛ Tiempo de espera agotado para sesión ${session_id}`);
-      sessionInfo.isWaitingForResponse = false;
-      sessionTracking.set(session_id, sessionInfo);
-    }
-    
-    if (wantDebug) {
-      return json({ pending: false, debug: debugLog.slice(-5) });
-    }
-    return json({});
+  // Entregar todas las respuestas no consumidas en orden (multi-mensaje)
+  const pending = queue.filter(item => !item.consumed);
+  if (pending.length > 0) {
+    pending.forEach(item => (item.consumed = true));
+    sessionInfo.lastResponseTime = now;
+    sessionInfo.isWaitingForResponse = false;
+    sessionInfo.firstPollTime = now; // Reset para siguiente conversación
+    sessionTracking.set(session_id, sessionInfo);
+
+    const payload = {
+      // mantener compatibilidad: primer mensaje también en "message"
+      message: pending[0]?.message,
+      messages: pending.map(p => p.message),
+      count: pending.length,
+      ...(wantDebug ? { debug: debugLog.slice(-5) } : {})
+    };
+    console.log(`✅ Enviando ${pending.length} mensaje(s)`);
+    return json(payload);
   }
 
-  // Buscar la primera respuesta no consumida
-  const pendingResponse = queue.find(item => !item.consumed);
-  if (!pendingResponse) {
-    if (wantDebug) {
-      return json({ pending: true, debug: debugLog.slice(-5) });
-    }
-    return json({ pending: true });
+  // Si no hay mensajes listos, verificar autodelete por inactividad de usuario
+  if (!sessionInfo.sessionClosed && sessionInfo.lastUserActivity > 0 && (now - sessionInfo.lastUserActivity) > INACTIVITY_TTL_MS) {
+    closeSession(session_id, now);
   }
 
-  // Marcar como consumida y resetear tracking de sesión
-  pendingResponse.consumed = true;
-  sessionInfo.lastResponseTime = now;
-  sessionInfo.isWaitingForResponse = false; // Ya no espera respuesta
-  sessionInfo.firstPollTime = now; // Reset para siguiente conversación
-  sessionTracking.set(session_id, sessionInfo);
+  // No hay nada que entregar - aplicar ventana de espera "pending"
+  if (sessionInfo.isWaitingForResponse && timeSinceFirstPoll < MAX_WAIT_TIME_MS) {
+    const waitTimeRemaining = Math.max(0, MAX_WAIT_TIME_MS - timeSinceFirstPoll);
+    if (wantDebug) {
+      return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll, debug: debugLog.slice(-5) });
+    }
+    return json({ pending: true, waitTimeRemaining, timeSinceFirstPoll });
+  }
   
-  console.log(`✅ Respuesta enviada: ${pendingResponse.message}`);
-  console.log(`🔄 Sesión reseteada para nueva conversación`);
+  // Tiempo de espera agotado
+  if (sessionInfo.isWaitingForResponse && timeSinceFirstPoll >= MAX_WAIT_TIME_MS) {
+    sessionInfo.isWaitingForResponse = false;
+    sessionTracking.set(session_id, sessionInfo);
+  }
 
   if (wantDebug) {
-    return json({ message: pendingResponse.message, debug: debugLog.slice(-5) });
+    return json({ pending: false, debug: debugLog.slice(-5) });
   }
-  return json({ message: pendingResponse.message });
+  return json({});
 };
 
 export const POST: APIRoute = async ({ request }) => {
@@ -223,29 +275,19 @@ export const POST: APIRoute = async ({ request }) => {
 
     console.log(`📨 Respuesta de n8n recibida - session_id: ${session_id}, message: ${message}`);
 
-    // Verificar si hay una sesión esperando respuesta
-    const sessionInfo = sessionTracking.get(session_id);
-    if (sessionInfo) {
-      console.log(`📊 Sesión esperando respuesta: ${sessionInfo.isWaitingForResponse}`);
-      console.log(`📊 Tiempo desde primer poll: ${Date.now() - sessionInfo.firstPollTime}ms`);
-    } else {
-      console.log(`⚠️ No hay tracking de sesión para ${session_id}, creando respuesta de todas formas`);
+    const now = Date.now();
+    const sessionInfo = getOrInitSession(session_id, now);
+
+    // Si la sesión está cerrada por inactividad, no entregar mensajes del agente hasta que el usuario reinicie
+    if (sessionInfo.sessionClosed) {
+      console.log(`⚠️ Sesión ${session_id} cerrada. Descartando mensaje del agente.`);
+      return json({ ok: true, dropped: true });
     }
 
-    // Crear nueva respuesta del agente
-    const responseItem: ResponseItem = {
-      message,
-      createdAt: Date.now(),
-      id: `${session_id}:${Date.now()}:${Math.random().toString(36).substr(2, 9)}`,
-      consumed: false
-    };
-
-    // Agregar respuesta a la cola
-    const currentQueue = responseQueues.get(session_id) || [];
-    currentQueue.push(responseItem);
-    responseQueues.set(session_id, currentQueue);
-    
+    // Crear y encolar respuesta del agente
+    const responseItem = enqueueResponse(session_id, message, 'agent');
     console.log(`💾 Respuesta del agente guardada: ${responseItem.id}`);
+    const currentQueue = responseQueues.get(session_id) || [];
     console.log(`📊 Cola tiene ${currentQueue.length} respuesta(s) pendiente(s)`);
 
     return json({ ok: true });
@@ -266,27 +308,34 @@ export const POST: APIRoute = async ({ request }) => {
 export const PUT: APIRoute = async ({ request }) => {
   try {
     purgeOld();
-    const { session_id } = await request.json();
+    const body = await request.json().catch(() => ({} as any));
+    const { session_id } = body as { session_id?: string };
     
     if (!session_id) {
       return json({ error: 'Missing session_id' }, 400);
     }
     
     const now = Date.now();
-    const sessionInfo = sessionTracking.get(session_id) || {
-      lastPollTime: now,
-      lastResponseTime: 0,
-      isWaitingForResponse: true,
-      firstPollTime: now
-    };
+    const sessionInfo = getOrInitSession(session_id, now);
     
-    // Forzar estado de espera cuando se llama PUT
+    // Marcar actividad del usuario y estado de espera
     sessionInfo.isWaitingForResponse = true;
+    sessionInfo.lastUserActivity = now;
     if (sessionInfo.firstPollTime === 0) {
       sessionInfo.firstPollTime = now;
     }
+
+    // Si estaba cerrada, reabrir limpiamente para nueva conversación
+    if (sessionInfo.sessionClosed) {
+      responseQueues.delete(session_id); // limpiar mensajes antiguos (incluye /delete)
+      sessionInfo.sessionClosed = false;
+      sessionInfo.closedAt = 0;
+      sessionInfo.lastResponseTime = 0;
+      sessionInfo.firstPollTime = now;
+      console.log(`🔓 Sesión ${session_id} reabierta por actividad del usuario`);
+    }
+
     sessionTracking.set(session_id, sessionInfo);
-    
     console.log(`📝 Sesión marcada como esperando respuesta: ${session_id}`);
     
     return json({ ok: true });
