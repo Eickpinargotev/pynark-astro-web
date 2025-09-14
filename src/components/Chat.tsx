@@ -86,17 +86,15 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
         if (messagesFromServer.some(m => m === '/delete') || data.timeout === true) {
           console.log('🧹 Encontrado /delete al regresar: mostrando mensaje de timeout en chat');
-          // Limpiar chat automáticamente y mostrar mensaje de timeout
-          setMessages([]);
-          setTurn(1);
+          // NO limpiar chat automáticamente, solo mostrar mensaje de advertencia
           const timeoutMessage: Message = {
             id: uuidv4(),
-            content: 'tiempo limite de inactividad: iniciar nuevo chat',
+            content: 'timeout_warning', // Special identifier for timeout message
             isUser: false,
             timestamp: new Date()
           };
-          setMessages([timeoutMessage]);
-          setChatState(prev => ({ ...prev, isTyping: false, isTimedOut: false }));
+          setMessages(prev => [...prev, timeoutMessage]);
+          setChatState(prev => ({ ...prev, isTyping: false, isTimedOut: true }));
           return;
         }
 
@@ -335,17 +333,15 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
           // Procesar mensajes especiales del sistema (p.ej. '/delete')
           if (messagesFromServer.some(m => m === '/delete') || data.timeout === true) {
             console.log('🧹 Recibido /delete: mostrando mensaje de timeout en chat');
-            // Limpiar chat automáticamente y mostrar mensaje de timeout
-            setMessages([]);
-            setTurn(1);
+            // NO limpiar chat automáticamente, solo mostrar mensaje de advertencia
             const timeoutMessage: Message = {
               id: uuidv4(),
-              content: 'tiempo limite de inactividad: iniciar nuevo chat',
+              content: 'timeout_warning', // Special identifier for timeout message
               isUser: false,
               timestamp: new Date()
             };
-            setMessages([timeoutMessage]);
-            setChatState(prev => ({ ...prev, isTyping: false, isTimedOut: false }));
+            setMessages(prev => [...prev, timeoutMessage]);
+            setChatState(prev => ({ ...prev, isTyping: false, isTimedOut: true }));
             // Detener polling
             clearInterval(interval);
             setPollingInterval(null);
@@ -457,7 +453,8 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
   const startNewConversation = () => {
     console.log('🔄 Iniciando nueva conversación tras timeout');
-    // Limpiar estado local (mensajes ya están limpios, solo resetear estado)
+    // Limpiar chat y resetear estado
+    setMessages([]);
     setTurn(1);
     setIsWaitingResponse(false);
     if (pollingInterval) {
@@ -537,25 +534,42 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
             key={message.id}
             className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
           >
-            <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                message.isUser
-                  ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-br-sm'
-                  : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-sm'
-              }`}
-            >
-              <p className={`text-sm leading-relaxed ${
-                message.isUser ? 'text-right' : 'text-left'
-              }`}>{message.content}</p>
-              <p className={`text-xs mt-1 text-right ${
-                message.isUser ? 'text-primary-100' : 'text-slate-500 dark:text-slate-400'
-              }`}>
-                {message.timestamp.toLocaleTimeString('es-ES', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
-              </p>
-            </div>
+            {message.content === 'timeout_warning' ? (
+              // Special timeout warning message
+              <div className="w-full max-w-md mx-auto px-4 py-3 rounded-2xl bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800">
+                <div className="text-center">
+                  <p className="text-sm text-orange-700 dark:text-orange-300 mb-2">
+                    El tiempo límite de espera se ha superado
+                  </p>
+                  <button
+                    onClick={startNewConversation}
+                    className="text-sm text-orange-600 dark:text-orange-400 underline hover:text-orange-800 dark:hover:text-orange-300 transition-colors"
+                  >
+                    iniciar nuevo chat
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div
+                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                  message.isUser
+                    ? 'bg-gradient-to-r from-primary-500 to-primary-600 text-white rounded-br-sm'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-sm'
+                }`}
+              >
+                <p className={`text-sm leading-relaxed ${
+                  message.isUser ? 'text-right' : 'text-left'
+                }`}>{message.content}</p>
+                <p className={`text-xs mt-1 text-right ${
+                  message.isUser ? 'text-primary-100' : 'text-slate-500 dark:text-slate-400'
+                }`}>
+                  {message.timestamp.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+            )}
           </div>
         ))}
 
@@ -598,13 +612,13 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder="Escribe tu mensaje..."
-            disabled={chatState.isLoading}
+            disabled={chatState.isLoading || chatState.isTimedOut}
             className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Mensaje del chat"
           />
           <button
             type="submit"
-            disabled={!inputValue.trim() || chatState.isLoading}
+            disabled={!inputValue.trim() || chatState.isLoading || chatState.isTimedOut}
             className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 disabled:from-slate-300 disabled:to-slate-400 text-white rounded-xl transition-all duration-200 disabled:cursor-not-allowed min-h-12 min-w-12 flex items-center justify-center"
             aria-label="Enviar mensaje"
           >
@@ -617,17 +631,6 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         </div>
       </form>
 
-      {/* Start New Chat Button - shown when timeout message is present */}
-      {messages.length > 0 && messages[messages.length - 1].content === 'tiempo limite de inactividad: iniciar nuevo chat' && (
-        <div className="p-4 border-t border-slate-200 dark:border-slate-700">
-          <button
-            onClick={startNewConversation}
-            className="w-full px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg font-medium transition-all duration-200"
-          >
-            Iniciar nuevo chat
-          </button>
-        </div>
-      )}
     </div>
   );
 };
