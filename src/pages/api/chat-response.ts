@@ -84,6 +84,7 @@ const closeSession = (session_id: string, now: number) => {
 
 const purgeOld = () => {
   const now = Date.now();
+  console.log(`🧹 Ejecutando purgeOld a las ${new Date().toLocaleTimeString()}`);
   
   // Purgar respuestas antiguas (seguridad/limpieza)
   for (const [sessionId, queue] of responseQueues.entries()) {
@@ -99,6 +100,7 @@ const purgeOld = () => {
   for (const [sessionId, info] of sessionTracking.entries()) {
     // Cerrar si no hay actividad del usuario por INACTIVITY_TTL_MS
     if (!info.sessionClosed && info.lastUserActivity > 0 && (now - info.lastUserActivity) > INACTIVITY_TTL_MS) {
+      console.log(`🕒 Sesión ${sessionId}: inactiva por ${Math.floor((now - info.lastUserActivity) / 1000)}s, cerrando...`);
       closeSession(sessionId, now);
     }
 
@@ -108,6 +110,7 @@ const purgeOld = () => {
       // No bloquear la purga por mensajes de sistema (p.ej. '/delete') que nunca serán consumidos si el usuario cerró la pestaña
       const hasUnconsumed = queue.some(i => !i.consumed && (i.type !== 'system') && (i.message !== DELETE_TRIGGER));
       const graceExpired = (now - info.closedAt) > SESSION_GRACE_MS;
+      console.log(`🔍 Sesión ${sessionId}: cerrada hace ${Math.floor((now - info.closedAt) / 1000)}s, unconsumed: ${hasUnconsumed}, grace: ${graceExpired}`);
       if (!hasUnconsumed && graceExpired) {
         sessionTracking.delete(sessionId);
         responseQueues.delete(sessionId);
@@ -118,6 +121,7 @@ const purgeOld = () => {
 
     // Purgar tracking de sesiones sin polling prolongado (fallback)
     if (now - info.lastPollTime > TTL_MS) {
+      console.log(`🚮 Sesión ${sessionId}: sin polling por ${Math.floor((now - info.lastPollTime) / 1000)}s, eliminando tracking`);
       sessionTracking.delete(sessionId);
     }
   }
@@ -388,6 +392,7 @@ export const PUT: APIRoute = async ({ request }) => {
     // Marcar actividad del usuario y estado de espera
     sessionInfo.isWaitingForResponse = true;
     sessionInfo.lastUserActivity = now;
+    console.log(`👤 PUT: marcando actividad de usuario para sesión ${session_id} a las ${new Date().toLocaleTimeString()}`);
     if (sessionInfo.firstPollTime === 0) {
       sessionInfo.firstPollTime = now;
     }
@@ -403,7 +408,7 @@ export const PUT: APIRoute = async ({ request }) => {
     }
 
     sessionTracking.set(session_id, sessionInfo);
-    console.log(`📝 Sesión marcada como esperando respuesta: ${session_id}`);
+    console.log(`📝 Sesión marcada como esperando respuesta: ${session_id}, lastUserActivity: ${new Date(sessionInfo.lastUserActivity).toLocaleTimeString()}`);
     
     return json({ ok: true });
   } catch (err) {

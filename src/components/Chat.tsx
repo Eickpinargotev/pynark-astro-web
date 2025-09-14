@@ -61,6 +61,52 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     }
   }, [messages, chatState.isTyping]);
 
+  // Handle tab visibility changes - check for missed messages when user returns
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && !pollingInterval && !chatState.isTimedOut) {
+        console.log('👀 Usuario regresó a la pestaña, verificando mensajes perdidos...');
+        // Check for missed messages when returning to the tab
+        checkForMissedMessages();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [pollingInterval, chatState.isTimedOut, sessionId]);
+
+  const checkForMissedMessages = async () => {
+    try {
+      const response = await fetch(`/api/chat-response?session_id=${sessionId}&debug=1`);
+      if (response.ok) {
+        const data = await response.json();
+        const messagesFromServer: string[] = Array.isArray(data.messages)
+          ? data.messages
+          : (typeof data.message === 'string' ? [data.message] : []);
+
+        if (messagesFromServer.some(m => m === '/delete')) {
+          console.log('🧹 Encontrado /delete al regresar: mostrando overlay de timeout');
+          setChatState(prev => ({ ...prev, isTyping: false, isTimedOut: true }));
+          return;
+        }
+
+        if (messagesFromServer.length > 0) {
+          console.log('📬 Mensajes perdidos encontrados:', messagesFromServer);
+          const newBotMessages: Message[] = messagesFromServer.map(msg => ({
+            id: uuidv4(),
+            content: msg,
+            isUser: false,
+            timestamp: new Date()
+          }));
+          setMessages(prev => [...prev, ...newBotMessages]);
+          setTurn(prev => prev + 1);
+        }
+      }
+    } catch (error) {
+      console.error('Error verificando mensajes perdidos:', error);
+    }
+  };
+
   const sendMessage = async (content: string) => {
     if (!content.trim()) {
       return;
@@ -237,10 +283,18 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
   // Polling para obtener respuestas pendientes (por sesión, no por mensaje)
   const startPollingForResponse = (baseUrl?: string) => {
+    // Si ya hay polling activo, no iniciar uno nuevo
+    if (pollingInterval) {
+      console.log('⚠️ Polling ya activo, no iniciando nuevo');
+      return;
+    }
+
     let pollCount = 0;
-    const maxPolls = 60; // Máximo 60 polls (2 minutos)
+    const maxPolls = 120; // Aumentar a 120 polls (4 minutos) para dar más tiempo
     let inactivityCount = 0; // Contador de polls sin respuesta
-    const maxInactivity = 7; // 7 polls sin respuesta = 14 segundos de inactividad (~15s)
+    const maxInactivity = 15; // Aumentar a 15 polls sin respuesta = 30 segundos de inactividad
+    
+    console.log('🔄 Iniciando polling para sesión:', sessionId);
     
     const interval = setInterval(async () => {
       pollCount++;
@@ -302,9 +356,9 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
             setTurn(prev => prev + 1);
             setChatState(prev => ({ ...prev, isTyping: false }));
             
-            // NO detener el polling, continuar escuchando por más respuestas
+            // NO detener el polling inmediatamente, continuar escuchando por más respuestas
             // Resetear el contador para dar más tiempo a respuestas adicionales
-            pollCount = Math.max(0, pollCount - 10);
+            pollCount = Math.max(0, pollCount - 20); // Dar más tiempo extra
             inactivityCount = 0; // Reset inactivity counter
             return;
           } else {
@@ -341,6 +395,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         }
       } catch (error) {
         console.error('💥 Error en polling:', error);
+        // No detener polling por errores de red temporales
       }
     }, 2000); // Poll every 2 seconds
 
