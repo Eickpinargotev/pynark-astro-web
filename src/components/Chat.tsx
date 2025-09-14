@@ -48,6 +48,9 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasSentAutoDeleteRef = useRef(false);
+  const hasShownTimeoutRef = useRef(false);
+  const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const INACTIVITY_MS = 60 * 1000;
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -87,15 +90,14 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
         if (messagesFromServer.some(m => m === '/delete') || data.timeout === true) {
           console.log('🧹 Encontrado /delete al regresar: mostrando mensaje de timeout en chat');
-          // NO limpiar chat automáticamente, solo mostrar mensaje de advertencia
-          const timeoutMessage: Message = {
-            id: uuidv4(),
-            content: 'timeout_warning', // Special identifier for timeout message
-            isUser: false,
-            timestamp: new Date()
-          };
-          setMessages(prev => [...prev, timeoutMessage]);
-          setChatState(prev => ({ ...prev, isTyping: false, isTimedOut: true }));
+          // Cancelar cualquier temporizador de inactividad local
+          if (inactivityTimerRef.current) {
+            clearTimeout(inactivityTimerRef.current);
+            inactivityTimerRef.current = null;
+          }
+          // Mostrar advertencia (idempotente) y bloquear input
+          handleTimeoutUI();
+          // Enviar /delete al servidor (idempotente)
           await sendAutoDeleteWebhook();
           return;
         }
@@ -133,6 +135,14 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setChatState(prev => ({ ...prev, error: null }));
+    // Resetear banderas y programar temporizador local de inactividad (1 minuto)
+    hasShownTimeoutRef.current = false;
+    hasSentAutoDeleteRef.current = false;
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+    scheduleInactivityTimer();
 
     // Check if we've exceeded max history
     if (messages.length >= agentConfig.maxHistory) {
@@ -335,15 +345,14 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
           // Procesar mensajes especiales del sistema (p.ej. '/delete')
           if (messagesFromServer.some(m => m === '/delete') || data.timeout === true) {
             console.log('🧹 Recibido /delete: mostrando mensaje de timeout en chat');
-            // NO limpiar chat automáticamente, solo mostrar mensaje de advertencia
-            const timeoutMessage: Message = {
-              id: uuidv4(),
-              content: 'timeout_warning', // Special identifier for timeout message
-              isUser: false,
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, timeoutMessage]);
-            setChatState(prev => ({ ...prev, isTyping: false, isTimedOut: true }));
+            // Cancelar cualquier temporizador de inactividad local
+            if (inactivityTimerRef.current) {
+              clearTimeout(inactivityTimerRef.current);
+              inactivityTimerRef.current = null;
+            }
+            // Mostrar advertencia (idempotente) y bloquear input
+            handleTimeoutUI();
+            // Enviar /delete al servidor (idempotente)
             await sendAutoDeleteWebhook();
             // Detener polling
             clearInterval(interval);
@@ -454,6 +463,34 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     }
   };
 
+  const handleTimeoutUI = () => {
+    if (hasShownTimeoutRef.current) return;
+    hasShownTimeoutRef.current = true;
+    setMessages(prev => {
+      if (prev.some(m => m.content === 'timeout_warning')) return prev;
+      const timeoutMessage: Message = {
+        id: uuidv4(),
+        content: 'timeout_warning',
+        isUser: false,
+        timestamp: new Date()
+      };
+      return [...prev, timeoutMessage];
+    });
+    setChatState(prev => ({ ...prev, isTyping: false, isTimedOut: true }));
+  };
+
+  const scheduleInactivityTimer = () => {
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
+    inactivityTimerRef.current = setTimeout(() => {
+      handleTimeoutUI();
+      // Fire-and-forget; protegido con bandera de envío
+      void sendAutoDeleteWebhook();
+    }, INACTIVITY_MS);
+  };
+
   const sendAutoDeleteWebhook = async () => {
     if (hasSentAutoDeleteRef.current) return;
     hasSentAutoDeleteRef.current = true;
@@ -480,6 +517,8 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     }
   };
 
+
+
   const startNewConversation = () => {
     console.log('🔄 Iniciando nueva conversación tras timeout');
     // Limpiar chat y resetear estado
@@ -492,6 +531,11 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     }
     setChatState({ isTyping: false, error: null, isLoading: false, isTimedOut: false });
     hasSentAutoDeleteRef.current = false;
+    hasShownTimeoutRef.current = false;
+    if (inactivityTimerRef.current) {
+      clearTimeout(inactivityTimerRef.current);
+      inactivityTimerRef.current = null;
+    }
 
     // Enfocar el input para nueva conversación
     setTimeout(() => {
