@@ -356,7 +356,7 @@ import drivingSchoolAgent from '../../agents/escuela_manejo.json';
       agentButtons?.classList.remove('hidden');
     });
 
-    function showChat(which) {
+  function showChat(which: 'ecommerce' | 'driving') {
       if (!chatContainer || !chatEcommerce || !chatDriving) return;
       agentButtons?.classList.add('hidden');
       chatContainer.classList.remove('hidden');
