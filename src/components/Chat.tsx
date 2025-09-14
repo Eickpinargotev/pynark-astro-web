@@ -47,6 +47,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const hasSentAutoDeleteRef = useRef(false);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -95,6 +96,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
           };
           setMessages(prev => [...prev, timeoutMessage]);
           setChatState(prev => ({ ...prev, isTyping: false, isTimedOut: true }));
+          await sendAutoDeleteWebhook();
           return;
         }
 
@@ -342,6 +344,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
             };
             setMessages(prev => [...prev, timeoutMessage]);
             setChatState(prev => ({ ...prev, isTyping: false, isTimedOut: true }));
+            await sendAutoDeleteWebhook();
             // Detener polling
             clearInterval(interval);
             setPollingInterval(null);
@@ -451,6 +454,32 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     }
   };
 
+  const sendAutoDeleteWebhook = async () => {
+    if (hasSentAutoDeleteRef.current) return;
+    hasSentAutoDeleteRef.current = true;
+    try {
+      const payload = {
+        agent_id: agentConfig.id,
+        session_id: sessionId,
+        msg_id: uuidv4(),
+        turn: 1,
+        message: "/delete"
+      };
+
+      await fetch(agentConfig.webhookUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        // @ts-ignore - AbortSignal.timeout disponible en navegadores modernos
+        signal: AbortSignal.timeout(5000)
+      });
+    } catch (error) {
+      console.error('Error sending auto /delete webhook:', error);
+    }
+  };
+
   const startNewConversation = () => {
     console.log('🔄 Iniciando nueva conversación tras timeout');
     // Limpiar chat y resetear estado
@@ -462,6 +491,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
       setPollingInterval(null);
     }
     setChatState({ isTyping: false, error: null, isLoading: false, isTimedOut: false });
+    hasSentAutoDeleteRef.current = false;
 
     // Enfocar el input para nueva conversación
     setTimeout(() => {
