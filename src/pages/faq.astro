@@ -153,45 +153,34 @@ import Layout from '../layouts/Layout.astro';
     </div>
   </section>
 
-  <script is:inline>
-    document.addEventListener('DOMContentLoaded', () => {
+  <script>
+    // FAQ Accordion functionality
+    document.addEventListener('DOMContentLoaded', function() {
       const faqButtons = document.querySelectorAll('.faq-button');
-
-      faqButtons.forEach((button) => {
-        button.addEventListener('click', (ev) => {
-          const btn = ev.currentTarget;
-          if (!(btn instanceof HTMLElement)) return;
-
-          const content = btn.nextElementSibling;
-          const icon = btn.querySelector('.faq-icon');
-
-          const isOpen = !!(content instanceof HTMLElement && !content.classList.contains('hidden'));
-
+      
+      faqButtons.forEach(button => {
+        button.addEventListener('click', function(this: HTMLButtonElement) {
+          const content = this.nextElementSibling as HTMLElement;
+          const icon = this.querySelector('.faq-icon') as HTMLElement;
+          const isOpen = content && !content.classList.contains('hidden');
+          
           // Close all other FAQ items
-          faqButtons.forEach((otherButton) => {
+          faqButtons.forEach(otherButton => {
             if (otherButton !== button) {
-              const otherContent = otherButton.nextElementSibling;
-              if (otherContent instanceof HTMLElement) {
-                otherContent.classList.add('hidden');
-              }
-              const otherIcon = otherButton.querySelector('.faq-icon');
-              if (otherIcon instanceof HTMLElement) {
-                otherIcon.style.transform = 'rotate(0deg)';
-              }
+              const otherContent = otherButton.nextElementSibling as HTMLElement;
+              const otherIcon = otherButton.querySelector('.faq-icon') as HTMLElement;
+              if (otherContent) otherContent.classList.add('hidden');
+              if (otherIcon) otherIcon.style.transform = 'rotate(0deg)';
             }
           });
-
+          
           // Toggle current item
-          if (content instanceof HTMLElement) {
-            if (isOpen) {
-              content.classList.add('hidden');
-            } else {
-              content.classList.remove('hidden');
-            }
-          }
-
-          if (icon instanceof HTMLElement) {
-            icon.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+          if (isOpen && content) {
+            content.classList.add('hidden');
+            if (icon) icon.style.transform = 'rotate(0deg)';
+          } else if (content) {
+            content.classList.remove('hidden');
+            if (icon) icon.style.transform = 'rotate(180deg)';
           }
         });
       });
