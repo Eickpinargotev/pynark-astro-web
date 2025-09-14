@@ -36,6 +36,9 @@ const DELETE_TRIGGER = '/delete';
 // NUEVO: long-poll por request para evitar que el usuario tenga que enviar otro mensaje
 const LONG_POLL_MS = 25 * 1000; // hasta 25s por GET
 const SLEEP_MS = 400; // intervalo de comprobación durante long-poll
+// Mantener señales de cierre más tiempo para que el cliente las vea al volver
+const DELETE_MESSAGE_TTL_MS = 24 * 60 * 60 * 1000; // 24h para '/delete'
+const CLOSED_SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24h para conservar estado de cierre
 
 // Helpers
 const getOrInitSession = (session_id: string, now: number): SessionInfo => {
@@ -88,7 +91,14 @@ const purgeOld = () => {
   
   // Purgar respuestas antiguas (seguridad/limpieza)
   for (const [sessionId, queue] of responseQueues.entries()) {
-    const validResponses = queue.filter(item => now - item.createdAt <= TTL_MS);
+    const validResponses = queue.filter(item => {
+      const age = now - item.createdAt;
+      // Mantener '/delete' por más tiempo para que el cliente lo reciba aunque vuelva tarde
+      if ((item.type === 'system') && (item.message === DELETE_TRIGGER)) {
+        return age <= DELETE_MESSAGE_TTL_MS;
+      }
+      return age <= TTL_MS;
+    });
     if (validResponses.length === 0) {
       responseQueues.delete(sessionId);
     } else {
@@ -104,14 +114,12 @@ const purgeOld = () => {
       closeSession(sessionId, now);
     }
 
-    // Limpiar tracking si la sesión está cerrada y ya se entregó (o pasó gracia)
+    // Limpiar tracking si la sesión está cerrada y pasó su TTL extendido
     if (info.sessionClosed) {
-      const queue = responseQueues.get(sessionId) || [];
-      // No bloquear la purga por mensajes de sistema (p.ej. '/delete') que nunca serán consumidos si el usuario cerró la pestaña
-      const hasUnconsumed = queue.some(i => !i.consumed && (i.type !== 'system') && (i.message !== DELETE_TRIGGER));
-      const graceExpired = (now - info.closedAt) > SESSION_GRACE_MS;
-      console.log(`🔍 Sesión ${sessionId}: cerrada hace ${Math.floor((now - info.closedAt) / 1000)}s, unconsumed: ${hasUnconsumed}, grace: ${graceExpired}`);
-      if (!hasUnconsumed && graceExpired) {
+      const ageClosed = now - info.closedAt;
+      const expired = ageClosed > CLOSED_SESSION_TTL_MS;
+      console.log(`🔍 Sesión ${sessionId}: cerrada hace ${Math.floor(ageClosed / 1000)}s, TTL cerrado vencido: ${expired}`);
+      if (expired) {
         sessionTracking.delete(sessionId);
         responseQueues.delete(sessionId);
         console.log(`🧽 Sesión ${sessionId} purgada tras cierre`);
@@ -238,6 +246,14 @@ export const GET: APIRoute = async ({ url }) => {
   // Si no hay mensajes listos, verificar autodelete por inactividad de usuario
   if (!sessionInfo.sessionClosed && sessionInfo.lastUserActivity > 0 && (now - sessionInfo.lastUserActivity) > INACTIVITY_TTL_MS) {
     closeSession(session_id, now);
+  }
+
+  // Si la sesión ya está cerrada, devolver una pista para mostrar el overlay aunque '/delete' ya no esté en la cola
+  if (sessionInfo.sessionClosed) {
+    const payload = wantDebug
+      ? { timeout: true, reason: 'inactivity', debug: makeDebug() }
+      : { timeout: true };
+    return json(payload);
   }
 
   // NUEVO: long-poll mientras esperamos respuesta del agente
