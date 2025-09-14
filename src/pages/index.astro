@@ -392,25 +392,48 @@ import agentConfig from '../../agents/ecomerce_test.json';
 
   // Contact form logic
   (function () {
-    const form = document.getElementById('contact-form');
-    if (!form) return;
+    const formEl = document.getElementById('contact-form');
+    if (!(formEl instanceof HTMLFormElement)) return;
 
     const nameInput = document.getElementById('name');
     const emailInput = document.getElementById('email');
     const companyInput = document.getElementById('company');
     const phoneInput = document.getElementById('phone');
     const dtInput = document.getElementById('meeting-datetime');
+
+    if (
+      !(nameInput instanceof HTMLInputElement) ||
+      !(emailInput instanceof HTMLInputElement) ||
+      !(companyInput instanceof HTMLInputElement) ||
+      !(phoneInput instanceof HTMLInputElement) ||
+      !(dtInput instanceof HTMLInputElement)
+    ) {
+      return;
+    }
+
     const submitBtn = document.getElementById('contact-submit');
     const submitSpinner = document.getElementById('contact-submit-spinner');
     const submitText = document.getElementById('contact-submit-text');
     const statusEl = document.getElementById('contact-status');
 
+    if (
+      !(submitBtn instanceof HTMLButtonElement) ||
+      !(submitSpinner instanceof SVGElement) ||
+      !(submitText instanceof HTMLSpanElement) ||
+      !(statusEl instanceof HTMLDivElement)
+    ) {
+      return;
+    }
+
     const WEBHOOK_URL = 'https://paneln8n.erickpinargote.com/webhook/contacto_pynark';
 
+    /** @param {number} n */
     const pad = (n) => String(n).padStart(2, '0');
+    /** @param {Date} d */
     const formatForDateTimeLocal = (d) =>
       `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 
+    /** @param {string} val */
     const parseLocalDateTime = (val) => {
       // Browser will parse datetime-local in local TZ
       const d = new Date(val);
@@ -444,8 +467,8 @@ import agentConfig from '../../agents/ecomerce_test.json';
       validateDateTime();
     }
 
+    /** @param {'success'|'error'} type @param {string} text */
     const setStatus = (type, text) => {
-      if (!statusEl) return;
       statusEl.classList.remove('hidden');
       statusEl.textContent = text;
 
@@ -461,8 +484,8 @@ import agentConfig from '../../agents/ecomerce_test.json';
       }
     };
 
+    /** @param {boolean} loading */
     const setLoading = (loading) => {
-      if (!submitBtn || !submitText || !submitSpinner) return;
       submitBtn.disabled = loading;
       submitBtn.setAttribute('aria-busy', loading ? 'true' : 'false');
       if (loading) {
@@ -474,13 +497,13 @@ import agentConfig from '../../agents/ecomerce_test.json';
       }
     };
 
-    form.addEventListener('submit', async (e) => {
+    formEl.addEventListener('submit', async (e) => {
       e.preventDefault();
       if (!nameInput || !emailInput || !companyInput || !phoneInput || !dtInput) return;
 
       // Trigger built-in validations first
-      if (!form.checkValidity()) {
-        form.reportValidity();
+      if (!formEl.checkValidity()) {
+        formEl.reportValidity();
         return;
       }
 
@@ -516,7 +539,7 @@ import agentConfig from '../../agents/ecomerce_test.json';
             'User-Agent': 'Pynark-Web/1.0'
           },
           body: JSON.stringify({ message: mensaje }),
-          signal: (AbortSignal).timeout ? (AbortSignal).timeout(10000) : undefined
+          signal: AbortSignal.timeout(10000)
         });
 
         if (!response.ok) {
@@ -526,9 +549,9 @@ import agentConfig from '../../agents/ecomerce_test.json';
 
         setStatus('success', '¡Solicitud enviada correctamente! Te contactaremos pronto.');
         // Optionally reset message and keep chosen datetime
-        form.reset();
+        formEl.reset();
         // Restore datetime to min after reset
-        if (dtInput) dtInput.value = formatForDateTimeLocal(minDate);
+        dtInput.value = formatForDateTimeLocal(minDate);
       } catch (err) {
         console.error('Error enviando webhook de contacto:', err);
         setStatus('error', 'No se pudo enviar tu solicitud. Intenta nuevamente en unos minutos.');
