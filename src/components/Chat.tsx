@@ -51,6 +51,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   const hasShownTimeoutRef = useRef(false);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const INACTIVITY_MS = 60 * 1000;
+  const suppressTimeoutRef = useRef(false);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -89,6 +90,10 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
           : (typeof data.message === 'string' ? [data.message] : []);
 
         if (messagesFromServer.some(m => m === '/delete') || data.timeout === true) {
+          if (suppressTimeoutRef.current) {
+            console.log('⏲️ Timeout suprimido tras reinicio de chat (al regresar a la pestaña)');
+            return;
+          }
           console.log('🧹 Encontrado /delete al regresar: mostrando mensaje de timeout en chat');
           // Cancelar cualquier temporizador de inactividad local
           if (inactivityTimerRef.current) {
@@ -143,6 +148,8 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
       inactivityTimerRef.current = null;
     }
     scheduleInactivityTimer();
+    // Reanudar detección normal de timeout desde ahora
+    suppressTimeoutRef.current = false;
 
     // Check if we've exceeded max history
     if (messages.length >= agentConfig.maxHistory) {
@@ -344,20 +351,27 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
           // Procesar mensajes especiales del sistema (p.ej. '/delete')
           if (messagesFromServer.some(m => m === '/delete') || data.timeout === true) {
+            if (suppressTimeoutRef.current) {
+              console.log('⏲️ Timeout suprimido tras reinicio de chat (polling)');
+              clearInterval(interval);
+              setPollingInterval(null);
+              setIsWaitingResponse(false);
+              return;
+            }
             console.log('🧹 Recibido /delete: mostrando mensaje de timeout en chat');
             // Cancelar cualquier temporizador de inactividad local
             if (inactivityTimerRef.current) {
               clearTimeout(inactivityTimerRef.current);
               inactivityTimerRef.current = null;
             }
+            // Detener polling inmediatamente para evitar duplicados durante awaits
+            clearInterval(interval);
+            setPollingInterval(null);
+            setIsWaitingResponse(false);
             // Mostrar advertencia (idempotente) y bloquear input
             handleTimeoutUI();
             // Enviar /delete al servidor (idempotente)
             await sendAutoDeleteWebhook();
-            // Detener polling
-            clearInterval(interval);
-            setPollingInterval(null);
-            setIsWaitingResponse(false);
             return;
           }
 
@@ -532,10 +546,23 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     setChatState({ isTyping: false, error: null, isLoading: false, isTimedOut: false });
     hasSentAutoDeleteRef.current = false;
     hasShownTimeoutRef.current = false;
+    // Suprimir timeouts reportados por el servidor tras el reinicio,
+    // hasta que el usuario envíe un nuevo mensaje (o reabramos la sesión)
+    suppressTimeoutRef.current = true;
     if (inactivityTimerRef.current) {
       clearTimeout(inactivityTimerRef.current);
       inactivityTimerRef.current = null;
     }
+    // Reabrir la sesión en backend para evitar nuevas señales de timeout al volver de otra pestaña
+    try {
+      // @ts-ignore - AbortSignal.timeout disponible en navegadores modernos
+      void fetch('/api/chat-response', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sessionId }),
+        signal: AbortSignal.timeout(5000)
+      });
+    } catch {}
 
     // Enfocar el input para nueva conversación
     setTimeout(() => {
