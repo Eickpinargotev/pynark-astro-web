@@ -45,6 +45,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     isTimedOut: false
   });
   
+  const rootRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +57,27 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   const suppressNextAutoScrollRef = useRef(false);
   const isAtBottomRef = useRef(true);
   const isMobileRef = useRef(false);
+
+  const alignChatWithKeyboard = (padding = 8) => {
+    if (!isMobileRef.current) return;
+    const vv = (window as any).visualViewport as VisualViewport | undefined;
+    // Run after keyboard shows/animates
+    setTimeout(() => {
+      const chatEl = rootRef.current;
+      if (!chatEl) return;
+      const viewportHeight = vv?.height ?? window.innerHeight;
+      const viewportOffsetTop = vv?.offsetTop ?? 0;
+      const keyboardTop = viewportHeight + viewportOffsetTop; // layout viewport coords
+      const rect = chatEl.getBoundingClientRect();
+      const chatBottom = rect.bottom;
+      const delta = chatBottom - (keyboardTop - padding);
+      if (delta > 0) {
+        window.scrollBy({ top: delta, left: 0, behavior: 'smooth' });
+      }
+      // Ensure the last message is visible inside the container
+      messagesEndRef.current?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+    }, 120);
+  };
 
   useEffect(() => {
     // Detect mobile/coarse pointer to tailor scroll/focus behavior
@@ -168,7 +190,12 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
 
   // Prevent auto-scroll jump right after sending (especially on mobile)
   suppressNextAutoScrollRef.current = true;
-  setMessages(prev => [...prev, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
+    // Keep keyboard open and align view on mobile
+    if (isMobileRef.current) {
+      inputRef.current?.focus({ preventScroll: true });
+      alignChatWithKeyboard();
+    }
     setInputValue('');
     setChatState(prev => ({ ...prev, error: null }));
     // Resetear banderas y programar temporizador local de inactividad (1 minuto)
@@ -604,8 +631,11 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     sendMessage(inputValue);
-    // Evitar reenfocar en móvil para no mover la ventana / abrir teclado
-    if (!isMobileRef.current) {
+    // Mantener teclado abierto y alinear chat en móvil
+    if (isMobileRef.current) {
+      inputRef.current?.focus({ preventScroll: true });
+      alignChatWithKeyboard();
+    } else {
       setTimeout(() => {
         inputRef.current?.focus();
       }, 10);
@@ -616,8 +646,11 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage(inputValue);
-      // Evitar reenfocar en móvil para no mover la ventana / abrir teclado
-      if (!isMobileRef.current) {
+      // Mantener teclado abierto y alinear chat en móvil
+      if (isMobileRef.current) {
+        inputRef.current?.focus({ preventScroll: true });
+        alignChatWithKeyboard();
+      } else {
         setTimeout(() => {
           inputRef.current?.focus();
         }, 10);
@@ -626,7 +659,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden relative">
+  <div ref={rootRef} className="max-w-2xl mx-auto bg-white/70 dark:bg-slate-800/70 backdrop-blur-lg rounded-2xl shadow-xl border border-white/20 dark:border-slate-700/50 overflow-hidden relative">
       {/* Header */}
       <div className="bg-gradient-to-r from-primary-500 to-secondary-500 px-6 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
@@ -747,16 +780,27 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyPress}
+            onFocus={() => {
+              if (isMobileRef.current) alignChatWithKeyboard();
+            }}
             placeholder="Escribe tu mensaje..."
             disabled={chatState.isLoading || chatState.isTimedOut}
             className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
             aria-label="Mensaje del chat"
           />
           <button
-            type="submit"
+            type="button"
             disabled={!inputValue.trim() || chatState.isLoading || chatState.isTimedOut}
             className="px-4 py-2 bg-gradient-to-r from-primary-500 to-primary-600 hover:from-primary-600 hover:to-primary-700 disabled:from-slate-300 disabled:to-slate-400 text-white rounded-xl transition-all duration-200 disabled:cursor-not-allowed min-h-12 min-w-12 flex items-center justify-center"
             aria-label="Enviar mensaje"
+            onPointerDown={(e) => {
+              // Prevent button from stealing focus (keeps keyboard open)
+              e.preventDefault();
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+            }}
+            onClick={() => handleSubmit(new Event('submit') as unknown as React.FormEvent)}
           >
             {chatState.isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
