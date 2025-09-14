@@ -1,7 +1,7 @@
 {
-  "id": "ecomerce",
-  "name": "E-commerce",
-  "webhookUrl": "https://paneln8n.erickpinargote.com/webhook/pynark_ecomerce",
+  "id": "escuela_manejo",
+  "name": "Escuela de Manejo",
+  "webhookUrl": "https://paneln8n.erickpinargote.com/webhook/pynark_escuela_manejo",
   "responseUrl": null,
   "avatarPath": "/assets/pynark_favicon.png",
   "requestTimeoutMs": 20000,

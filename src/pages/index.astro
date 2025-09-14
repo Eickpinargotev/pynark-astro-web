@@ -4,7 +4,8 @@ import Chat from '../components/Chat.tsx';
 import ChatSimulation from '../components/ChatSimulation.tsx';
 
 // Load agent configuration
-import agentConfig from '../../agents/ecomerce_test.json';
+import ecommerceAgent from '../../agents/ecomerce_test.json';
+import drivingSchoolAgent from '../../agents/escuela_manejo.json';
 ---
 
 <Layout title="Pynark Automation - Chatbots que Convierten">
@@ -34,17 +35,28 @@ import agentConfig from '../../agents/ecomerce_test.json';
           PRUEBA NUESTROS AGENTES
         </button>
         
-        <div id="agent-buttons" class="hidden mt-8 space-y-4">
+        <div id="agent-buttons" class="hidden mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button 
             id="ecommerce-btn"
-            class="inline-flex items-center px-6 py-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium rounded-xl shadow-lg hover:shadow-xl border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-300"
+            class="inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium rounded-xl shadow-lg hover:shadow-xl border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-300"
           >
             E-commerce Test
           </button>
+          <button 
+            id="driving-btn"
+            class="inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium rounded-xl shadow-lg hover:shadow-xl border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-300"
+          >
+            Escuela de Manejo
+          </button>
         </div>
-        
-        <div id="chat-container" class="hidden mt-8">
-          <Chat client:load agentConfig={agentConfig} />
+
+        <div id="chat-container" class="hidden mt-8 space-y-8">
+          <div id="chat-ecommerce" class="hidden">
+            <Chat client:load agentConfig={ecommerceAgent} />
+          </div>
+          <div id="chat-driving" class="hidden">
+            <Chat client:load agentConfig={drivingSchoolAgent} />
+          </div>
         </div>
       </div>
     </div>
@@ -333,18 +345,35 @@ import agentConfig from '../../agents/ecomerce_test.json';
     // Chat section interactivity
     const showAgentsBtn = document.getElementById('show-agents-btn');
     const agentButtons = document.getElementById('agent-buttons');
-    const ecommerceBtn = document.getElementById('ecommerce-btn');
-    const chatContainer = document.getElementById('chat-container');
+  const ecommerceBtn = document.getElementById('ecommerce-btn');
+  const drivingBtn = document.getElementById('driving-btn');
+  const chatContainer = document.getElementById('chat-container');
+  const chatEcommerce = document.getElementById('chat-ecommerce');
+  const chatDriving = document.getElementById('chat-driving');
 
     showAgentsBtn?.addEventListener('click', () => {
       showAgentsBtn.style.display = 'none';
       agentButtons?.classList.remove('hidden');
     });
 
-    ecommerceBtn?.addEventListener('click', () => {
+    function showChat(which) {
+      if (!chatContainer || !chatEcommerce || !chatDriving) return;
       agentButtons?.classList.add('hidden');
-      chatContainer?.classList.remove('hidden');
-    });
+      chatContainer.classList.remove('hidden');
+      // Hide both, show selected
+      chatEcommerce.classList.add('hidden');
+      chatDriving.classList.add('hidden');
+      if (which === 'ecommerce') {
+        chatEcommerce.classList.remove('hidden');
+      } else if (which === 'driving') {
+        chatDriving.classList.remove('hidden');
+      }
+      // Optional: smooth scroll to chat
+      chatContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    ecommerceBtn?.addEventListener('click', () => showChat('ecommerce'));
+    drivingBtn?.addEventListener('click', () => showChat('driving'));
 
   // Nota: se eliminó el placeholder de envío de formularios para no interferir con el formulario del chat
   </script>
