@@ -46,22 +46,51 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   });
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const hasSentAutoDeleteRef = useRef(false);
   const hasShownTimeoutRef = useRef(false);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
   const INACTIVITY_MS = 60 * 1000;
   const suppressTimeoutRef = useRef(false);
+  const suppressNextAutoScrollRef = useRef(false);
+  const isAtBottomRef = useRef(true);
+  const isMobileRef = useRef(false);
+
+  useEffect(() => {
+    // Detect mobile/coarse pointer to tailor scroll/focus behavior
+    const mqCoarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const smallWidth = window.innerWidth < 768; // md breakpoint
+    isMobileRef.current = mqCoarse || smallWidth;
+
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const threshold = 16;
+      isAtBottomRef.current = el.scrollTop + el.clientHeight >= el.scrollHeight - threshold;
+    };
+    // Initialize
+    isAtBottomRef.current = true;
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      // Avoid smooth scroll on mobile to reduce perceived movement
+      const behavior: ScrollBehavior = isMobileRef.current ? 'auto' : 'smooth';
+      messagesEndRef.current.scrollIntoView({ behavior, block: 'nearest' });
     }
   };
 
   useEffect(() => {
     // Only scroll if there are messages or if typing
-    if (messages.length > 0 || chatState.isTyping) {
+    if (suppressNextAutoScrollRef.current) {
+      // Skip one auto-scroll cycle (e.g., right after sending on mobile)
+      suppressNextAutoScrollRef.current = false;
+      return;
+    }
+    if ((messages.length > 0 || chatState.isTyping) && isAtBottomRef.current) {
       scrollToBottom();
     }
   }, [messages, chatState.isTyping]);
@@ -137,7 +166,9 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
       timestamp: new Date()
     };
 
-    setMessages(prev => [...prev, userMessage]);
+  // Prevent auto-scroll jump right after sending (especially on mobile)
+  suppressNextAutoScrollRef.current = true;
+  setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setChatState(prev => ({ ...prev, error: null }));
     // Resetear banderas y programar temporizador local de inactividad (1 minuto)
@@ -573,20 +604,24 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     sendMessage(inputValue);
-    // Mantener foco en el input después de enviar
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 10);
+    // Evitar reenfocar en móvil para no mover la ventana / abrir teclado
+    if (!isMobileRef.current) {
+      setTimeout(() => {
+        inputRef.current?.focus();
+      }, 10);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage(inputValue);
-      // Mantener foco en el input después de enviar
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 10);
+      // Evitar reenfocar en móvil para no mover la ventana / abrir teclado
+      if (!isMobileRef.current) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 10);
+      }
     }
   };
 
@@ -616,7 +651,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
       </div>
 
       {/* Messages */}
-      <div className="h-96 overflow-y-auto p-4 space-y-4 relative">
+  <div ref={messagesContainerRef} className="h-96 overflow-y-auto p-4 space-y-4 relative">
         {messages.length === 0 && (
           <div className="text-center py-8">
             <img 
