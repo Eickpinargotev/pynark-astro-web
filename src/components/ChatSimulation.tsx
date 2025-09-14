@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 
 interface ChatMessage {
   content: string;
@@ -74,12 +74,15 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [isVisible, setIsVisible] = useState(false);
+  // Removed visibility gating to avoid re-runs during scroll
   const [showButtons, setShowButtons] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [currentInputText, setCurrentInputText] = useState('');
   const activeTimersRef = useRef<NodeJS.Timeout[]>([]);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const isAtBottomRef = useRef<boolean>(true);
+  const restartTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Auto-hide buttons on mobile on initial load
   useEffect(() => {
@@ -100,7 +103,6 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  const sectionRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Function to clear all active timers
@@ -115,23 +117,20 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
     return timer;
   };
 
-  // Intersection Observer para detectar visibilidad
+  // Track whether the user is near the bottom of the messages container to avoid
+  // fighting their scroll and causing flicker.
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsVisible(entry.isIntersecting);
-      },
-      { 
-        threshold: 0.5, // Require more visibility before starting animation
-        rootMargin: '0px 0px -100px 0px' // Only trigger when well into viewport
-      }
-    );
-
-    if (sectionRef.current) {
-      observer.observe(sectionRef.current);
-    }
-
-    return () => observer.disconnect();
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const threshold = 16; // px tolerance
+      const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - threshold;
+      isAtBottomRef.current = atBottom;
+    };
+    // Initialize state
+    isAtBottomRef.current = true;
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Cleanup timers on unmount
@@ -141,19 +140,12 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
     };
   }, []);
 
-  // Auto scroll to bottom (only when chat is visible and playing)
-  useEffect(() => {
-    if (isVisible && isPlaying && messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-  }, [currentMessageIndex, isTyping, isVisible, isPlaying]);
+  // Disabled internal auto-scroll to honor request: no autoscroll.
+  // If needed in the future, re-enable conditionally via a prop.
 
   // Simulation logic
   useEffect(() => {
-    // Temporarily remove visibility check to debug
     if (!isPlaying) return;
-    
-    console.log('Simulation running:', { selectedDemo, currentMessageIndex, isVisible, isPlaying });
 
     const currentDemo = chatDemos[selectedDemo];
     if (currentMessageIndex >= currentDemo.messages.length) {
@@ -164,7 +156,10 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
         setIsUserTyping(false);
         setIsTyping(false);
       }, 3000));
-      return () => clearTimeout(restartTimer);
+      return () => {
+        clearTimeout(restartTimer);
+        clearAllTimers();
+      };
     }
 
     const currentMessage = currentDemo.messages[currentMessageIndex];
@@ -201,8 +196,11 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
         
         typeMessage();
       }, 1000));
-      
-      return () => clearTimeout(startTypingTimer);
+
+      return () => {
+        clearTimeout(startTypingTimer);
+        clearAllTimers();
+      };
     } else {
       // Clear input state for bot messages
       setCurrentInputText('');
@@ -214,9 +212,12 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
         setIsTyping(false);
         setCurrentMessageIndex(prev => prev + 1);
       }, 1500 + Math.random() * 1000));
-      return () => clearTimeout(typingTimer);
+      return () => {
+        clearTimeout(typingTimer);
+        clearAllTimers();
+      };
     }
-  }, [selectedDemo, currentMessageIndex, isVisible, isPlaying]);
+  }, [selectedDemo, currentMessageIndex, isPlaying]);
 
   const handleDemoSelect = (index: number) => {
     // Immediately stop current simulation
@@ -224,6 +225,10 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
     
     // Clear ALL active timers to prevent overlapping
     clearAllTimers();
+    if (restartTimerRef.current) {
+      clearTimeout(restartTimerRef.current);
+      restartTimerRef.current = null;
+    }
     
     // Clear all states immediately
     setCurrentInputText('');
@@ -235,12 +240,9 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
     setSelectedDemo(index);
     
     // Restart simulation after ensuring everything is clean
-    const restartTimer = setTimeout(() => {
+    restartTimerRef.current = setTimeout(() => {
       setIsPlaying(true);
     }, 200);
-    
-    // Track the restart timer
-    activeTimersRef.current = [restartTimer];
     
     // Close buttons on mobile after selection
     if (isMobile) {
@@ -255,17 +257,10 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
   const currentDemo = chatDemos[selectedDemo];
   const visibleMessages = currentDemo.messages.slice(0, currentMessageIndex);
   
-  console.log('Render debug:', { 
-    selectedDemo, 
-    currentMessageIndex, 
-    totalMessages: currentDemo.messages.length,
-    visibleCount: visibleMessages.length,
-    isVisible,
-    isPlaying
-  });
+  // Debug logs removed to prevent console noise and potential perf issues
 
   return (
-    <div ref={sectionRef} className={`relative ${className}`}>
+    <div className={`relative ${className}`}>
       <div className="flex flex-col lg:flex-row gap-6 relative">
         {/* Chat Display */}
         <div className="flex-1">
@@ -288,7 +283,7 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
             </div>
 
             {/* Messages */}
-            <div className="h-80 overflow-y-auto p-4 space-y-4">
+            <div ref={messagesContainerRef} className="h-80 overflow-y-auto p-4 space-y-4">
               {visibleMessages.map((message, index) => (
                 <div
                   key={`${selectedDemo}-${index}`}
