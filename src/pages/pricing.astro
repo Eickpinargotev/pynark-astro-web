@@ -3,111 +3,166 @@ import Layout from '../layouts/Layout.astro';
 ---
 
 <Layout title="Pricing - Pynark Automation" description="Planes y precios de nuestros agentes de IA para servicio al cliente">
-  <section class="py-20 px-4 sm:px-6 lg:px-8 min-h-[80vh] flex items-center justify-center">
-    <div class="max-w-4xl mx-auto text-center">
-      <div class="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-700 p-12">
-        <div class="mb-8">
-          <div class="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-primary-100 to-secondary-100 dark:from-primary-900/50 dark:to-secondary-900/50 rounded-2xl flex items-center justify-center">
-            <svg class="w-12 h-12 text-primary-600 dark:text-primary-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h4M9 7h6m-6 4h6m-2 4h2"></path>
-            </svg>
-          </div>
-          <h1 class="font-display text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white mb-4">
-            Próximamente
-          </h1>
-          <p class="text-xl text-slate-600 dark:text-slate-300 mb-8 max-w-2xl mx-auto">
-            Estamos trabajando en nuestros planes de precios personalizados. Cada solución se adapta a las necesidades específicas de tu negocio.
-          </p>
-        </div>
+  <section class="py-20 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto">
+      <header class="text-center mb-12">
+        <h1 class="font-display text-4xl sm:text-5xl font-bold text-slate-900 dark:text-white mb-3">Planes y precios</h1>
+        <p class="text-lg text-slate-600 dark:text-slate-300">Paquetes de implementación únicos y membresías mensuales para evolucionar tu agente.</p>
+      </header>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-          <div class="bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20 rounded-2xl p-6 border border-primary-200 dark:border-primary-800">
-            <div class="w-12 h-12 mx-auto mb-4 bg-primary-600 rounded-xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-              </svg>
+      <!-- Paquetes de implementación -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-14">
+        <!-- Starter -->
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 7H9.5a3.5 3.5 0 0 0 0 7H13a3 3 0 0 1 0 6H6"/></svg>
             </div>
-            <h3 class="font-semibold text-slate-900 dark:text-white mb-2">Starter</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400">Para pequeños negocios que inician con IA</p>
+            <div>
+              <h3 class="font-semibold text-slate-900 dark:text-white">Starter</h3>
+              <p class="text-sm text-slate-500">$250–$450 • $7/mes pass‑through</p>
+            </div>
           </div>
-
-          <div class="bg-gradient-to-br from-secondary-50 to-primary-50 dark:from-secondary-900/20 dark:to-primary-900/20 rounded-2xl p-6 border-2 border-secondary-300 dark:border-secondary-600 relative overflow-hidden">
-            <div class="absolute top-0 right-0 bg-gradient-to-r from-secondary-500 to-secondary-600 text-white px-3 py-1 text-xs font-semibold rounded-bl-lg">
-              Popular
-            </div>
-            <div class="w-12 h-12 mx-auto mb-4 bg-secondary-600 rounded-xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path>
-              </svg>
-            </div>
-            <h3 class="font-semibold text-slate-900 dark:text-white mb-2">Professional</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400">Para empresas en crecimiento</p>
-          </div>
-
-          <div class="bg-gradient-to-br from-primary-50 to-secondary-50 dark:from-primary-900/20 dark:to-secondary-900/20 rounded-2xl p-6 border border-primary-200 dark:border-primary-800">
-            <div class="w-12 h-12 mx-auto mb-4 bg-primary-600 rounded-xl flex items-center justify-center">
-              <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-4m-5 0H3m2 0h4M9 7h6m-6 4h6m-2 4h2"></path>
-              </svg>
-            </div>
-            <h3 class="font-semibold text-slate-900 dark:text-white mb-2">Enterprise</h3>
-            <p class="text-sm text-slate-600 dark:text-slate-400">Soluciones personalizadas a gran escala</p>
+          <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mb-4">
+            <li>• 1 Canal (WhatsApp o Telegram)</li>
+            <li>• Handoff humano y Smart Handoff</li>
+            <li>• Reportes a teléfono, Telegram o Google Sheet</li>
+            <li>• Buffer de mensajes</li>
+            <li>• Alcance: FAQ + respuestas pre‑definidas</li>
+            <li>• Integraciones: 1 (reportes)</li>
+          </ul>
+          <div class="flex items-center justify-between">
+            <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
+            <a href="/#contact" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium">
+              Get Starter
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
           </div>
         </div>
 
-        <div class="space-y-6">
-          <div class="bg-slate-50 dark:bg-slate-700/50 rounded-2xl p-6">
-            <h3 class="font-semibold text-slate-900 dark:text-white mb-3">¿Qué incluyen nuestros planes?</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-              <div class="flex items-center space-x-3">
-                <div class="w-5 h-5 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                </div>
-                <span class="text-sm text-slate-600 dark:text-slate-300">Agente personalizado para tu industria</span>
-              </div>
-              <div class="flex items-center space-x-3">
-                <div class="w-5 h-5 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                </div>
-                <span class="text-sm text-slate-600 dark:text-slate-300">Integración con tus sistemas</span>
-              </div>
-              <div class="flex items-center space-x-3">
-                <div class="w-5 h-5 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                </div>
-                <span class="text-sm text-slate-600 dark:text-slate-300">Soporte técnico dedicado</span>
-              </div>
-              <div class="flex items-center space-x-3">
-                <div class="w-5 h-5 bg-primary-600 rounded-full flex items-center justify-center flex-shrink-0">
-                  <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                  </svg>
-                </div>
-                <span class="text-sm text-slate-600 dark:text-slate-300">Reportes y analytics mensuales</span>
-              </div>
+        <!-- Pro -->
+        <div class="relative rounded-2xl border-2 border-secondary-400/60 dark:border-secondary-600/60 bg-gradient-to-b from-secondary-50 to-white dark:from-secondary-900/10 dark:to-slate-800 p-6 shadow-md overflow-hidden">
+          <span class="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full bg-secondary-600 text-white">Popular</span>
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-secondary-600 text-white flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-slate-900 dark:text-white">Pro</h3>
+              <p class="text-sm text-slate-500">$600–$1,100 • $30/mes pass‑through</p>
+            </div>
+          </div>
+          <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mb-4">
+            <li>• Todo Starter</li>
+            <li>• 2 Canales (WhatsApp, Telegram, Instagram o Messenger)</li>
+            <li>• Transcripción de audios</li>
+            <li>• Integración con base de datos</li>
+            <li>• Alcance: FAQ + captación de datos + respuestas inteligentes</li>
+            <li>• Integraciones: 2 (reportes, catálogos, agendamientos)</li>
+          </ul>
+          <div class="flex items-center justify-between">
+            <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
+            <a href="/#contact" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary-600 hover:bg-secondary-700 text-white text-sm font-medium">
+              Get Pro
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
+          </div>
+        </div>
+
+        <!-- Ultra -->
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></svg>
+            </div>
+            <div>
+              <h3 class="font-semibold text-slate-900 dark:text-white">Ultra</h3>
+              <p class="text-sm text-slate-500">$1,200–$2,000 • $80/mes pass‑through</p>
+            </div>
+          </div>
+          <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-2 mb-4">
+            <li>• Todo Pro</li>
+            <li>• 4 Canales (WhatsApp, Telegram, Instagram o Messenger)</li>
+            <li>• CRM avanzado (Chatwoot, HubSpot, GoHighLevel, etc.)</li>
+            <li>• Alcance: FAQ + captación de datos + respuestas pre‑definidas</li>
+            <li>• Integraciones: 3 (reportes, catálogos, agendamientos)</li>
+          </ul>
+          <div class="flex items-center justify-between">
+            <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
+            <a href="/#contact" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium">
+              Get Ultra
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Membresías mensuales -->
+      <div class="rounded-3xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-8 shadow">
+        <h2 class="font-display text-2xl font-bold mb-6">Membresías mensuales</h2>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <!-- Lite -->
+          <div class="rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-semibold">Lite</h3>
+              <span class="text-sm text-slate-500">$25/mes</span>
+            </div>
+            <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-1 mb-4">
+              <li>• 1 chequeo de salud/mes</li>
+              <li>• Cambios incluidos: 0 (solo bugs)</li>
+              <li>• Soporte por email en 48–72 h</li>
+            </ul>
+            <div class="flex items-center justify-between">
+              <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
+              <a href="/#contact" class="text-sm px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white">Elegir Lite</a>
             </div>
           </div>
 
-          <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
-              href="/#contact"
-              class="inline-flex items-center justify-center px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-            >
-              Solicitar Cotización
-            </a>
-            <a 
-              href="/"
-              class="inline-flex items-center justify-center px-8 py-4 bg-white dark:bg-slate-700 text-slate-900 dark:text-white font-semibold rounded-xl shadow-lg hover:shadow-xl border border-slate-200 dark:border-slate-600 hover:border-primary-300 dark:hover:border-primary-600 transform hover:-translate-y-1 transition-all duration-300"
-            >
-              Probar Demo
-            </a>
+          <!-- Pro -->
+          <div class="relative rounded-2xl border-2 border-secondary-400/60 dark:border-secondary-600/60 p-6">
+            <span class="absolute -top-3 right-4 text-xs px-2 py-0.5 rounded-full bg-secondary-600 text-white">Recomendada</span>
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-semibold">Pro</h3>
+              <span class="text-sm text-slate-500">$89/mes</span>
+            </div>
+            <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-1 mb-4">
+              <li>• Todo Lite + actualizaciones de plantilla</li>
+              <li>• 2 cambios menores/mes</li>
+              <li>• Reporte mensual básico</li>
+              <li>• Soporte en 24–48 h</li>
+            </ul>
+            <div class="flex items-center justify-between">
+              <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
+              <a href="/#contact" class="text-sm px-3 py-1.5 rounded-lg bg-secondary-600 text-white">Elegir Pro</a>
+            </div>
           </div>
+
+          <!-- Growth -->
+          <div class="rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+            <div class="flex items-center justify-between mb-2">
+              <h3 class="font-semibold">Growth</h3>
+              <span class="text-sm text-slate-500">$179/mes</span>
+            </div>
+            <ul class="text-sm text-slate-600 dark:text-slate-300 space-y-1 mb-4">
+              <li>• Todo Pro + optimización proactiva</li>
+              <li>• 4 cambios/mes</li>
+              <li>• Reunión trimestral de roadmap</li>
+              <li>• Soporte priorizado (12–24 h)</li>
+            </ul>
+            <div class="flex items-center justify-between">
+              <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
+              <a href="/#contact" class="text-sm px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white">Elegir Growth</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-8 rounded-xl bg-slate-50 dark:bg-slate-700/40 p-5">
+          <h3 class="font-semibold mb-2">Hitos y pagos</h3>
+          <ul class="text-sm text-slate-600 dark:text-slate-300 list-disc ml-5 space-y-1">
+            <li>40% al inicio (Descubrimiento y blueprint, no reembolsable).</li>
+            <li>40% al demo funcional (staging).</li>
+            <li>20% al go‑live + capacitación.</li>
+          </ul>
         </div>
       </div>
     </div>
