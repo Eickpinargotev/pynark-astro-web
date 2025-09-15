@@ -4,7 +4,8 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro check && astro build",
+    "build": "astro check && astro build && npm run postbuild",
+  "postbuild": "npx pagefind --site ./dist/client --output-subdir pagefind",
     "start": "node ./dist/server/entry.mjs",
     "start:prod": "node ./dist/server/entry.mjs",
     "preview": "astro preview",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@tailwindcss/typography": "^0.5.16",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "pagefind": "^1.4.0"
   }
 }

@@ -5,6 +5,41 @@ export interface Props {
 }
 
 const { title, description = 'Documentación de precios y guía de instalación' } = Astro.props;
+
+// Construir índice simple de documentación en build y embebido como JSON para el cliente.
+// Usamos el query ?raw para obtener el contenido fuente de cada MDX.
+const rawModules = import.meta.glob('../pages/docs/**/*.mdx', { eager: true, import: 'default', query: '?raw' });
+const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
+  // El glob con query devuelve claves que terminan en ?raw; lo eliminamos para procesar la ruta real.
+  let p = origPath.replace(/\?raw$/, '');
+  const raw = String(content||'');
+  let title = '';
+  if (raw.startsWith('---')) {
+    const end = raw.indexOf('\n---',3); if (end!==-1){ const fm = raw.slice(3,end); const m = fm.match(/title:\s*(.+)/i); if(m) title = m[1].replace(/^['"`]|['"`]$/g,'').trim(); }
+  }
+  const h1 = raw.match(/^#\s+(.+)$/m); const h2 = raw.match(/^##\s+(.+)$/m);
+  if(!title) title = h1?.[1] || h2?.[1] || 'Documento';
+  const headings = Array.from(raw.matchAll(/^#{1,3}\s+(.+)$/gm)).map(m=>m[1].trim());
+  // Limpieza adicional: eliminar líneas de import/export ESM para que no aparezcan en snippets.
+  const cleaned = raw
+    .replace(/^(?:import|export)\s+[^\n]*$/gm,' ') // quita imports/exports de una línea
+    .replace(/export\s+const\s+prerender\s*=\s*true\s*;?/gi,' ');
+  const text = cleaned
+    .replace(/---[\s\S]*?---/,' ')
+    .replace(/```[\s\S]*?```/g,' ')
+    .replace(/`[^`]+`/g,' ')
+    .replace(/<[^>]+>/g,' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g,' ')
+    .replace(/\[[^\]]*\]\([^)]*\)/g,' ')
+    .replace(/[#>*_~`]+/g,' ')
+    .replace(/\\/g,' ')
+    .replace(/\s+/g,' ') // compactar
+    .trim()
+    .slice(0, 8000);
+  let url = p.replace(/\\/g,'/').replace(/^.*\/pages/,'').replace(/\.mdx$/,'').replace(/\/index$/,'/');
+  if(!url.startsWith('/')) url = '/' + url;
+  return { url, title, headings, text };
+}).filter(r => r.url.startsWith('/docs/'));
 ---
 
 <!DOCTYPE html>
@@ -15,11 +50,12 @@ const { title, description = 'Documentación de precios y guía de instalación'
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#3b82f6" />
     <link rel="icon" type="image/png" href="/assets/pynark_favicon.png" />
-    <title>{title}</title>
+  <title>{title}</title>
+  {(() => { const json = JSON.stringify(__docIndex).replace(/</g,'\\u003c'); return <script type="application/json" id="__doc-index" set:html={json} /> })()}
   </head>
   <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
     <!-- Topbar estilo Cursor Docs -->
-    <header class="sticky top-0 z-40 border-b border-slate-200/60 dark:border-slate-800/70 bg-white/70 dark:bg-slate-950/70 backdrop-blur">
+  <header class="sticky top-0 z-[80] border-b border-slate-200/60 dark:border-slate-800/70 bg-white/70 dark:bg-slate-950/70 backdrop-blur">
       <div class="max-w-7xl mx-auto h-14 px-4 sm:px-6 lg:px-8 flex items-center gap-3">
         <button id="sidebar-open" class="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
@@ -29,9 +65,12 @@ const { title, description = 'Documentación de precios y guía de instalación'
           <span class="font-semibold hidden sm:block">Pynark Docs</span>
         </a>
         <div class="flex-1 max-w-[640px]">
-          <div class="relative">
-            <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input id="doc-search" placeholder="Buscar…" class="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40" />
+          <div class="relative" id="doc-search">
+            <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="doc-search-input" placeholder="Buscar en la documentación…" class="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40" autocomplete="off" aria-autocomplete="list" aria-controls="doc-search-list" />
+            <div id="doc-search-dropdown" class="absolute mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg overflow-hidden hidden z-[70]">
+              <ul id="doc-search-list" class="max-h-72 overflow-auto text-sm"></ul>
+            </div>
           </div>
         </div>
         <a href="/pricing" class="hidden md:inline text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400">Volver a Pricing</a>
@@ -45,7 +84,7 @@ const { title, description = 'Documentación de precios y guía de instalación'
     <!-- Grid de 3 columnas: sidebar / contenido / ToC -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_260px] gap-6">
       <!-- Sidebar -->
-      <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-72 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 p-4 overflow-y-auto transform -translate-x-full transition-transform duration-200 lg:static lg:translate-x-0 lg:w-auto lg:p-0 lg:border-0">
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-72 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 p-4 overflow-y-auto transform -translate-x-full transition-transform duration-200 lg:static lg:translate-x-0 lg:w-auto lg:p-0 lg:border-0">
         <nav class="lg:sticky lg:top-24 space-y-6 text-sm">
           <div class="group">
             <button class="w-full flex items-center justify-between text-left text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
@@ -68,7 +107,7 @@ const { title, description = 'Documentación de precios y guía de instalación'
 
       <!-- Contenido principal -->
       <main class="min-w-0">
-        <article id="doc-article" class="prose prose-slate dark:prose-invert max-w-none">
+        <article id="doc-article" data-pagefind-body class="prose prose-slate dark:prose-invert max-w-none">
           <slot />
         </article>
       </main>
@@ -88,6 +127,271 @@ const { title, description = 'Documentación de precios y guía de instalación'
 
     <script>
       // @ts-nocheck
+      // Búsqueda ligera del lado del cliente
+      ;(function initLightSearch() {
+  const container = document.getElementById('doc-search');
+        const input = document.getElementById('doc-search-input');
+        const dropdown = document.getElementById('doc-search-dropdown');
+        const list = document.getElementById('doc-search-list');
+  const DEBUG_SEARCH = true;
+        if (!container || !input || !dropdown || !list) return;
+
+        let index = null; // { entries: [{url,title,headings:string[],text:string}] }
+        let active = -1; // índice activo en la lista para navegación con teclado
+        let lastQuery = '';
+
+        const fetchIndex = async () => {
+          if (index) return index;
+          // 1. Intentar índice embebido
+          try {
+            const embedded = document.getElementById('__doc-index');
+            if (embedded?.textContent) {
+              const arr = JSON.parse(embedded.textContent);
+              if (Array.isArray(arr) && arr.length) {
+                index = { entries: arr };
+                if (DEBUG_SEARCH) console.info('[Search] índice embebido cargado', arr.length);
+                return index;
+              }
+            }
+          } catch (e) { console.warn('Índice embebido inválido', e); }
+          // 2. Intentar JSON externo
+            try {
+              const res = await fetch('/docs/search-index.json', { cache: 'no-store' });
+              if (res.ok) {
+                const data = await res.json();
+                if (data && Array.isArray(data.entries) && data.entries.length) {
+                  index = data; return index;
+                }
+              }
+            } catch (e) { /* ignorar */ }
+          // 3. Fallback Pagefind
+          try {
+            if (typeof window !== 'undefined' && !window.pagefind && !document.getElementById('pagefind-script')) {
+              const s = document.createElement('script');
+              s.id = 'pagefind-script';
+              s.src = '/pagefind/' + 'pagefind.js';
+              s.async = true; document.head.appendChild(s);
+              await new Promise((res, rej) => { s.onload = () => res(); s.onerror = () => rej(new Error('No cargó pagefind.js')); });
+            }
+            if (window.pagefind) { index = { entries: null, usePagefind: true }; return index; }
+          } catch (e) { console.warn('No se pudo inicializar Pagefind', e); }
+          index = { entries: [] }; return index;
+        };
+
+        const normalize = (s='') => s
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/\p{Diacritic}/gu,'');
+        const score = (q, entry) => {
+          const query = normalize(q);
+          const title = normalize(entry.title || '');
+          const heads = normalize((entry.headings || []).join(' \n '));
+          const text = normalize(entry.text || '');
+          let s = 0;
+          if (title.includes(query)) s += 10;
+          if (heads.includes(query)) s += 5;
+          if (text.includes(query)) s += 2;
+          // bonus por prefijo
+          if (title.startsWith(query)) s += 5;
+          return s;
+        };
+
+        const highlight = (snippet, q) => {
+          if (!q) return snippet;
+          const safe = snippet.replace(/[<>]/g,'');
+          try {
+            const n = normalize(q);
+            // dividir palabras básicas del query
+            const parts = n.split(/\s+/).filter(Boolean).slice(0,4);
+            if (!parts.length) return safe;
+            let pattern = parts.map(p => p.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&')).join('|');
+            const re = new RegExp(`(${pattern})`,`gi`);
+            return safe.replace(re, m => `<mark class="bg-yellow-200 dark:bg-yellow-500/40 text-inherit rounded px-0.5">${m}</mark>`);
+          } catch { return safe; }
+        };
+        const render = (items, q) => {
+          list.innerHTML = '';
+          active = -1;
+          if (!items.length) {
+            if ((q||'').trim().length >= 2) {
+              const li = document.createElement('li');
+              li.className = 'px-3 py-2 text-slate-500 text-sm';
+              li.textContent = 'Sin resultados';
+              list.appendChild(li);
+              dropdown.classList.remove('hidden');
+              input.setAttribute('aria-expanded','true');
+            } else {
+              dropdown.classList.add('hidden');
+              input.setAttribute('aria-expanded', 'false');
+            }
+            return;
+          }
+          items.slice(0, 8).forEach((it, i) => {
+            const li = document.createElement('li');
+            li.className = 'px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer';
+            li.setAttribute('role', 'option');
+            const shownTitle = it.title || it.url;
+            const snippet = it.snippet || '';
+            li.innerHTML = `
+              <div class=\"font-medium\">${highlight(shownTitle, q)}</div>
+              ${snippet ? `<div class=\"text-xs text-slate-500 line-clamp-2\">${highlight(snippet, q)}</div>` : ''}
+            `;
+            li.addEventListener('mousedown', (e) => { // mousedown para no perder foco antes del click
+              e.preventDefault();
+              window.location.href = it.url;
+            });
+            list.appendChild(li);
+          });
+          dropdown.classList.remove('hidden');
+          input.setAttribute('aria-expanded', 'true');
+        };
+
+        const search = async (q) => {
+          const data = await fetchIndex();
+          // Pagefind fallback mode
+          if (data.usePagefind) {
+            try {
+              const query = q.trim();
+              if (!query) { dropdown.classList.add('hidden'); input.setAttribute('aria-expanded','false'); return; }
+              const pfRes = await window.pagefind.search(query);
+              const items = await Promise.all((pfRes?.results || []).slice(0,30).map(async r => {
+                const d = await r.data();
+                return {
+                  url: d.url,
+                  title: d.meta?.title || d.url,
+                  snippet: d.content_excerpt || (d.content || '').slice(0,160),
+                  _score: r.score || 0
+                };
+              }));
+              // Ordenar por score desc
+              items.sort((a,b)=> (b._score||0) - (a._score||0));
+              render(items, q);
+              return;
+            } catch (e) {
+              console.warn('Error buscando con Pagefind', e);
+              dropdown.classList.add('hidden');
+              input.setAttribute('aria-expanded','false');
+              return;
+            }
+          }
+          const entries = data.entries || [];
+          const query = q.trim();
+          if (!query) { dropdown.classList.add('hidden'); input.setAttribute('aria-expanded','false'); return; }
+          if (DEBUG_SEARCH) console.info('[Search] entradas disponibles', entries.length);
+          const ranked = entries
+            .map((e) => ({
+              ...e,
+              _score: score(query, e),
+              match: '',
+            }))
+            .filter((e) => e._score > 0)
+            .sort((a,b) => b._score - a._score);
+          if (DEBUG_SEARCH) console.info('[Search] ranked length', ranked.length);
+          if (!ranked.length) {
+            // fallback substring
+            const nq = normalize(query);
+            const fb = entries.filter(e => normalize(e.title||'').includes(nq) || normalize(e.text||'').includes(nq)).slice(0,20);
+            if (DEBUG_SEARCH) console.info('[Search] fallback substring length', fb.length);
+            if (fb.length) {
+              fb.forEach((e) => {
+                const plain = e.text || '';
+                const low = normalize(plain);
+                const idx = low.indexOf(nq);
+                let snippet = plain.slice(0, 140) + (plain.length>140?'…':'');
+                if (idx !== -1) {
+                  const start = Math.max(0, idx - 40);
+                  snippet = plain.slice(start, idx + nq.length + 80).trim();
+                  if (start > 0) snippet = '…' + snippet;
+                  if (idx + nq.length + 80 < plain.length) snippet += '…';
+                }
+                e.snippet = snippet;
+              });
+              render(fb, query); return;
+            }
+          }
+
+          // genera snippet simple
+          ranked.forEach((e) => {
+            const plain = e.text || '';
+            const nq = normalize(query);
+            // buscar ventana alrededor de la primera coincidencia normalizada
+            const low = normalize(plain);
+            const idx = low.indexOf(nq);
+            let snippet = '';
+            if (idx !== -1) {
+              const start = Math.max(0, idx - 40);
+              snippet = plain.slice(start, idx + nq.length + 80).trim();
+              if (start > 0) snippet = '…' + snippet;
+              if (idx + nq.length + 80 < plain.length) snippet += '…';
+            } else {
+              snippet = plain.slice(0, 140) + (plain.length>140 ? '…':'');
+            }
+            e.snippet = snippet;
+          });
+          render(ranked, query);
+        };
+
+        let debounce;
+        input.addEventListener('input', (e) => {
+          const q = e.target.value;
+          lastQuery = q;
+          clearTimeout(debounce);
+          debounce = setTimeout(() => search(q), 120);
+        });
+
+        input.addEventListener('focus', () => {
+          if (lastQuery) search(lastQuery); else if (input.value.trim()) { lastQuery = input.value; search(lastQuery); }
+        });
+
+        // Soporta navegación y búsqueda inmediata al presionar Enter aunque el debounce no haya terminado
+        input.addEventListener('keydown', async (e) => {
+          let items = Array.from(list.children);
+          if (e.key === 'ArrowDown') {
+            if (!items.length) return; // sin resultados aún
+            e.preventDefault(); active = (active + 1) % items.length; updateActive(items); return;
+          }
+          if (e.key === 'ArrowUp') {
+            if (!items.length) return;
+            e.preventDefault(); active = (active - 1 + items.length) % items.length; updateActive(items); return;
+          }
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            // Si aún no hay ítems visibles (debounce en curso), forzar búsqueda inmediata
+            if (!items.length) {
+              await search(input.value);
+              items = Array.from(list.children);
+            }
+            if (items.length) {
+              if (active === -1) active = 0; // por defecto el primero
+              const target = items[active];
+              if (target) target.dispatchEvent(new MouseEvent('mousedown'));
+            }
+            return;
+          }
+          if (e.key === 'Escape') {
+            dropdown.classList.add('hidden');
+            input.setAttribute('aria-expanded','false');
+            return;
+          }
+        });
+
+        // Accesibilidad básica
+        input.setAttribute('role','combobox');
+        input.setAttribute('aria-expanded','false');
+        input.setAttribute('aria-haspopup','listbox');
+        list.setAttribute('role','listbox');
+
+        function updateActive(items) {
+          items.forEach((el, i) => el.classList.toggle('bg-slate-100', i === active));
+          const activeEl = items[active];
+          if (activeEl) activeEl.scrollIntoView({ block: 'nearest' });
+        }
+
+        document.addEventListener('click', (e) => {
+          if (!container.contains(e.target)) dropdown.classList.add('hidden');
+        });
+      })();
+
       // Sidebar mobile toggle
       const sidebar = document.getElementById('sidebar');
       const openBtn = document.getElementById('sidebar-open');

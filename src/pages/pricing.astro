@@ -13,7 +13,7 @@ import Layout from '../layouts/Layout.astro';
       <!-- Paquetes de implementación -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-14">
         <!-- Starter -->
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm h-full flex flex-col">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M17 7H9.5a3.5 3.5 0 0 0 0 7H13a3 3 0 0 1 0 6H6"/></svg>
@@ -31,8 +31,7 @@ import Layout from '../layouts/Layout.astro';
             <li>• Alcance: FAQ + respuestas pre‑definidas</li>
             <li>• Integraciones: 1 (reportes)</li>
           </ul>
-          <div class="flex items-center justify-between">
-            <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
+          <div class="flex items-center justify-end mt-auto">
             <a href="/#contact" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium">
               Get Starter
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -41,7 +40,7 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         <!-- Pro -->
-        <div class="relative rounded-2xl border-2 border-secondary-400/60 dark:border-secondary-600/60 bg-gradient-to-b from-secondary-50 to-white dark:from-secondary-900/10 dark:to-slate-800 p-6 shadow-md overflow-hidden">
+        <div class="relative rounded-2xl border-2 border-secondary-400/60 dark:border-secondary-600/60 bg-gradient-to-b from-secondary-50 to-white dark:from-secondary-900/10 dark:to-slate-800 p-6 shadow-md overflow-hidden h-full flex flex-col">
           <span class="absolute top-3 right-3 text-xs px-2 py-0.5 rounded-full bg-secondary-600 text-white">Popular</span>
           <div class="flex items-center gap-3 mb-3">
             <div class="w-10 h-10 rounded-xl bg-secondary-600 text-white flex items-center justify-center">
@@ -60,7 +59,7 @@ import Layout from '../layouts/Layout.astro';
             <li>• Alcance: FAQ + captación de datos + respuestas inteligentes</li>
             <li>• Integraciones: 2 (reportes, catálogos, agendamientos)</li>
           </ul>
-          <div class="flex items-center justify-between">
+          <div class="flex items-center justify-between mt-auto">
             <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
             <a href="/#contact" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-secondary-600 hover:bg-secondary-700 text-white text-sm font-medium">
               Get Pro
@@ -70,7 +69,7 @@ import Layout from '../layouts/Layout.astro';
         </div>
 
         <!-- Ultra -->
-        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm">
+        <div class="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 shadow-sm h-full flex flex-col">
           <div class="flex items-center gap-3 mb-3">
             <div class="w-10 h-10 rounded-xl bg-primary-600 text-white flex items-center justify-center">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M14 14h7v7h-7z"/><path d="M3 14h7v7H3z"/></svg>
@@ -87,8 +86,7 @@ import Layout from '../layouts/Layout.astro';
             <li>• Alcance: FAQ + captación de datos + respuestas pre‑definidas</li>
             <li>• Integraciones: 3 (reportes, catálogos, agendamientos)</li>
           </ul>
-          <div class="flex items-center justify-between">
-            <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
+          <div class="flex items-center justify-end mt-auto">
             <a href="/#contact" class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary-600 hover:bg-primary-700 text-white text-sm font-medium">
               Get Ultra
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
@@ -102,7 +100,7 @@ import Layout from '../layouts/Layout.astro';
         <h2 class="font-display text-2xl font-bold mb-6">Membresías mensuales</h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <!-- Lite -->
-          <div class="rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+          <div class="rounded-2xl border border-slate-200 dark:border-slate-700 p-6 h-full flex flex-col">
             <div class="flex items-center justify-between mb-2">
               <h3 class="font-semibold">Lite</h3>
               <span class="text-sm text-slate-500">$25/mes</span>
@@ -112,14 +110,13 @@ import Layout from '../layouts/Layout.astro';
               <li>• Cambios incluidos: 0 (solo bugs)</li>
               <li>• Soporte por email en 48–72 h</li>
             </ul>
-            <div class="flex items-center justify-between">
-              <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
+            <div class="flex items-center justify-end mt-auto">
               <a href="/#contact" class="text-sm px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white">Elegir Lite</a>
             </div>
           </div>
 
           <!-- Pro -->
-          <div class="relative rounded-2xl border-2 border-secondary-400/60 dark:border-secondary-600/60 p-6">
+          <div class="relative rounded-2xl border-2 border-secondary-400/60 dark:border-secondary-600/60 p-6 h-full flex flex-col">
             <span class="absolute -top-3 right-4 text-xs px-2 py-0.5 rounded-full bg-secondary-600 text-white">Recomendada</span>
             <div class="flex items-center justify-between mb-2">
               <h3 class="font-semibold">Pro</h3>
@@ -131,14 +128,14 @@ import Layout from '../layouts/Layout.astro';
               <li>• Reporte mensual básico</li>
               <li>• Soporte en 24–48 h</li>
             </ul>
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between mt-auto">
               <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
               <a href="/#contact" class="text-sm px-3 py-1.5 rounded-lg bg-secondary-600 text-white">Elegir Pro</a>
             </div>
           </div>
 
           <!-- Growth -->
-          <div class="rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+          <div class="rounded-2xl border border-slate-200 dark:border-slate-700 p-6 h-full flex flex-col">
             <div class="flex items-center justify-between mb-2">
               <h3 class="font-semibold">Growth</h3>
               <span class="text-sm text-slate-500">$179/mes</span>
@@ -149,21 +146,12 @@ import Layout from '../layouts/Layout.astro';
               <li>• Reunión trimestral de roadmap</li>
               <li>• Soporte priorizado (12–24 h)</li>
             </ul>
-            <div class="flex items-center justify-between">
-              <a href="/docs/cuenta/pricing" class="text-primary-600 dark:text-primary-400 hover:underline text-sm">Más info</a>
+            <div class="flex items-center justify-end mt-auto">
               <a href="/#contact" class="text-sm px-3 py-1.5 rounded-lg bg-slate-900 dark:bg-slate-700 text-white">Elegir Growth</a>
             </div>
           </div>
         </div>
 
-        <div class="mt-8 rounded-xl bg-slate-50 dark:bg-slate-700/40 p-5">
-          <h3 class="font-semibold mb-2">Hitos y pagos</h3>
-          <ul class="text-sm text-slate-600 dark:text-slate-300 list-disc ml-5 space-y-1">
-            <li>40% al inicio (Descubrimiento y blueprint, no reembolsable).</li>
-            <li>40% al demo funcional (staging).</li>
-            <li>20% al go‑live + capacitación.</li>
-          </ul>
-        </div>
       </div>
     </div>
   </section>
