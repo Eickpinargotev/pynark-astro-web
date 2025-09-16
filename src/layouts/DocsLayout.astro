@@ -65,11 +65,11 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
           <span class="font-semibold hidden sm:block">Pynark Docs</span>
         </a>
         <div class="flex-1 max-w-[640px]">
-          <div class="relative" id="doc-search">
+          <div class="relative z-[140]" id="doc-search">
             <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input id="doc-search-input" placeholder="Buscar en la documentación…" class="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40" autocomplete="off" aria-autocomplete="list" aria-controls="doc-search-list" />
-            <div id="doc-search-dropdown" class="absolute mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-lg overflow-hidden hidden z-[70]">
-              <ul id="doc-search-list" class="max-h-72 overflow-auto text-sm"></ul>
+            <div id="doc-search-dropdown" class="absolute left-0 right-0 top-full mt-2 md:mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl md:shadow-lg overflow-hidden hidden z-[130]">
+              <ul id="doc-search-list" class="max-h-[70vh] md:max-h-72 overflow-auto text-sm"></ul>
             </div>
           </div>
         </div>
@@ -79,7 +79,10 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
           <svg id="icon-sun" class="hidden w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.657-6.343 1.414-1.414M4.929 19.071l1.414-1.414m12.728 0 1.414 1.414M6.343 5.657 4.929 4.243"/><circle cx="12" cy="12" r="4"/></svg>
         </button>
       </div>
-    </header>
+  </header>
+
+  <!-- Backdrop para búsqueda en móvil (debajo del header para no tapar el dropdown) -->
+  <div id="doc-search-backdrop" class="fixed inset-0 bg-slate-900/25 dark:bg-black/45 backdrop-blur-sm hidden md:hidden z-[60]"></div>
 
     <!-- Grid de 3 columnas: sidebar / contenido / ToC -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_260px] gap-6">
@@ -133,8 +136,36 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
         const input = document.getElementById('doc-search-input');
         const dropdown = document.getElementById('doc-search-dropdown');
         const list = document.getElementById('doc-search-list');
+  const backdrop = document.getElementById('doc-search-backdrop');
   const DEBUG_SEARCH = true;
         if (!container || !input || !dropdown || !list) return;
+
+    const showBackdrop = (on) => {
+      if (!backdrop) return;
+      if (on) backdrop.classList.remove('hidden');
+      else backdrop.classList.add('hidden');
+    };
+
+        const setMobileOverlay = (on) => {
+          // En móvil, convertir el contenedor en un overlay por encima del header y el menú
+          const isMobile = window.matchMedia('(max-width: 767px)').matches;
+          if (!isMobile) return; // sólo en móvil
+          const hamburger = document.getElementById('sidebar-open');
+          const themeBtn = document.getElementById('theme-toggle-docs');
+          if (on) {
+            container.classList.remove('relative');
+            container.classList.add('fixed','inset-x-0','top-2','px-3','w-full');
+            hamburger?.classList.add('opacity-0','pointer-events-none');
+            themeBtn?.classList.add('opacity-0','pointer-events-none');
+            document.body.classList.add('overflow-hidden');
+          } else {
+            container.classList.remove('fixed','inset-x-0','top-2','px-3','w-full');
+            container.classList.add('relative');
+            hamburger?.classList.remove('opacity-0','pointer-events-none');
+            themeBtn?.classList.remove('opacity-0','pointer-events-none');
+            document.body.classList.remove('overflow-hidden');
+          }
+        };
 
         let index = null; // { entries: [{url,title,headings:string[],text:string}] }
         let active = -1; // índice activo en la lista para navegación con teclado
@@ -219,9 +250,13 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
               li.textContent = 'Sin resultados';
               list.appendChild(li);
               dropdown.classList.remove('hidden');
+              showBackdrop(true);
+              setMobileOverlay(true);
               input.setAttribute('aria-expanded','true');
             } else {
               dropdown.classList.add('hidden');
+              showBackdrop(false);
+              setMobileOverlay(false);
               input.setAttribute('aria-expanded', 'false');
             }
             return;
@@ -243,6 +278,8 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
             list.appendChild(li);
           });
           dropdown.classList.remove('hidden');
+          showBackdrop(true);
+          setMobileOverlay(true);
           input.setAttribute('aria-expanded', 'true');
         };
 
@@ -252,7 +289,7 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
           if (data.usePagefind) {
             try {
               const query = q.trim();
-              if (!query) { dropdown.classList.add('hidden'); input.setAttribute('aria-expanded','false'); return; }
+              if (!query) { dropdown.classList.add('hidden'); showBackdrop(false); setMobileOverlay(false); input.setAttribute('aria-expanded','false'); return; }
               const pfRes = await window.pagefind.search(query);
               const items = await Promise.all((pfRes?.results || []).slice(0,30).map(async r => {
                 const d = await r.data();
@@ -270,13 +307,15 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
             } catch (e) {
               console.warn('Error buscando con Pagefind', e);
               dropdown.classList.add('hidden');
+              showBackdrop(false);
+              setMobileOverlay(false);
               input.setAttribute('aria-expanded','false');
               return;
             }
           }
           const entries = data.entries || [];
           const query = q.trim();
-          if (!query) { dropdown.classList.add('hidden'); input.setAttribute('aria-expanded','false'); return; }
+          if (!query) { dropdown.classList.add('hidden'); showBackdrop(false); setMobileOverlay(false); input.setAttribute('aria-expanded','false'); return; }
           if (DEBUG_SEARCH) console.info('[Search] entradas disponibles', entries.length);
           const ranked = entries
             .map((e) => ({
@@ -335,12 +374,28 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
         input.addEventListener('input', (e) => {
           const q = e.target.value;
           lastQuery = q;
+          // Mostrar overlay mientras escribe, aunque aún no haya resultados
+          setMobileOverlay(true);
+          showBackdrop(true);
           clearTimeout(debounce);
           debounce = setTimeout(() => search(q), 120);
         });
 
         input.addEventListener('focus', () => {
+          // Activar overlay y backdrop al enfocar el input en móvil
+          setMobileOverlay(true);
+          showBackdrop(true);
           if (lastQuery) search(lastQuery); else if (input.value.trim()) { lastQuery = input.value; search(lastQuery); }
+        });
+
+        input.addEventListener('blur', () => {
+          // Si se pierde el foco y no se hizo click en resultados, cerrar overlay/backdrop
+          setTimeout(() => {
+            if (dropdown.classList.contains('hidden')) {
+              setMobileOverlay(false);
+              showBackdrop(false);
+            }
+          }, 50);
         });
 
         // Soporta navegación y búsqueda inmediata al presionar Enter aunque el debounce no haya terminado
@@ -370,6 +425,8 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
           }
           if (e.key === 'Escape') {
             dropdown.classList.add('hidden');
+            showBackdrop(false);
+            setMobileOverlay(false);
             input.setAttribute('aria-expanded','false');
             return;
           }
@@ -388,7 +445,15 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
         }
 
         document.addEventListener('click', (e) => {
-          if (!container.contains(e.target)) dropdown.classList.add('hidden');
+          if (!container.contains(e.target)) { dropdown.classList.add('hidden'); showBackdrop(false); setMobileOverlay(false); }
+        });
+
+        // Cerrar al tocar el backdrop
+        backdrop?.addEventListener('click', () => {
+          dropdown.classList.add('hidden');
+          showBackdrop(false);
+          setMobileOverlay(false);
+          input.setAttribute('aria-expanded','false');
         });
       })();
 
