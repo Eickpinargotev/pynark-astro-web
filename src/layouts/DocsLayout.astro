@@ -67,26 +67,59 @@ const __docIndexJSON = JSON.stringify(__docIndex).replace(/</g,'\\u003c');
 ---
 
 <!DOCTYPE html>
-<html lang="es" class="scroll-smooth dark">
+<html lang="es" class="scroll-smooth" data-theme-init>
   <head>
+    <!-- Prevent theme flash: hide until theme is applied -->
+    <style>
+      html[data-theme-init] { visibility: hidden; }
+      html[data-theme-init] *, html[data-theme-init] *::before, html[data-theme-init] *::after {
+        transition: none !important;
+        animation: none !important;
+      }
+      /* Neutralize UA button styles during init */
+      html[data-theme-init] #theme-toggle-docs { appearance: none; border: none; }
+      /* Fallback styles before Tailwind loads to avoid white flash */
+      html[data-theme="dark"] #theme-toggle-docs { background-color: #0b1220; color: #cbd5e1; }
+      html[data-theme="light"] #theme-toggle-docs { background-color: #f8fafc; color: #334155; }
+    </style>
     <meta charset="UTF-8" />
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#3b82f6" />
     <link rel="icon" type="image/png" href="/assets/pynark_favicon.png" />
   <title>{title}</title>
-  <script type="application/json" id="__doc-index" set:html={__docIndexJSON}></script>
+  <!-- No-flash theme init: per-session default dark, overridden by session selection, before paint -->
+  <script>
+    (function () {
+      var root = document.documentElement;
+      root.setAttribute('data-theme-init', '');
+      try {
+        var t = sessionStorage.getItem('color-theme');
+        if (!t) { t = 'dark'; sessionStorage.setItem('color-theme', t); }
+  var isDark = t === 'dark';
+  root.classList.toggle('dark', isDark);
+  root.style.colorScheme = isDark ? 'dark' : 'light';
+  // Set background early to avoid white flash
+  root.style.backgroundColor = isDark ? '#0f172a' : '#ffffff';
+  root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        var meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute('content', isDark ? '#0f172a' : '#3b82f6');
+      } catch (e) { /* ignore */ }
+      root.removeAttribute('data-theme-init');
+    })();
+  </script>
+  <script is:inline type="application/json" id="__doc-index" set:html={__docIndexJSON}></script>
   </head>
   <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
     <!-- Topbar estilo Cursor Docs -->
   <header class="sticky top-0 z-[200] border-b border-slate-200/60 dark:border-slate-800/70 bg-white dark:bg-slate-950">
-  <div id="docs-header-row" class="max-w-[90rem] mx-auto min-h-14 px-4 py-2 sm:px-6 lg:px-8 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
+  <div id="docs-header-row" class="max-w-[90rem] mx-auto min-h-[3.75rem] /* ~60px */ px-4 py-2 sm:px-6 lg:px-8 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
         <a href="/" class="flex items-center gap-2 pr-2">
           <img src="/assets/pynark_favicon.png" class="w-6 h-6" alt="Pynark" />
           <span class="font-semibold hidden sm:block">Pynark Docs</span>
         </a>
-        <div class="min-w-0 max-w-[640px] w-full">
-          <div class="relative z-[140]" id="doc-search">
+        <div class="min-w-0 max-w-[640px] w-full hidden md:block">
+          <div class="relative z-[140]" id="doc-search" data-search-container>
             <svg class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
             <input id="doc-search-input" placeholder="Buscar en la documentación…" class="w-full pl-11 pr-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40" autocomplete="off" aria-autocomplete="list" aria-controls="doc-search-list" />
             <div id="doc-search-dropdown" class="absolute left-0 right-0 top-full mt-2 md:mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl md:shadow-lg overflow-hidden hidden z-[220]">
@@ -95,12 +128,20 @@ const __docIndexJSON = JSON.stringify(__docIndex).replace(/</g,'\\u003c');
           </div>
         </div>
         <!-- Theme toggle moved to top-right -->
+  <div class="flex items-center gap-1 justify-self-end ml-auto">
+        <!-- Mobile search icon (shows on < md) -->
+        <button id="search-toggle" class="md:hidden h-11 w-11 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40" aria-label="Abrir búsqueda" aria-expanded="false" aria-controls="mobile-search-panel">
+          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        </button>
         <button id="theme-toggle-docs" class="h-11 w-11 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40" aria-label="Tema: Claro" title="Tema: Claro">
           <svg id="icon-moon" class="hidden w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
           <svg id="icon-sun" class="hidden w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.556-7.556-1.414 1.414M6.343 17.657l-1.414 1.414m12.728 0-1.414-1.414M6.343 6.343 4.929 4.929"/></svg>
         </button>
+        </div>
         
       </div>
+
+      <!-- Eliminado panel móvil anterior; ahora usamos overlay de pantalla completa -->
 
       <!-- Breadcrumb bajo la primera fila -->
       <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 pb-2">
@@ -130,6 +171,24 @@ const __docIndexJSON = JSON.stringify(__docIndex).replace(/</g,'\\u003c');
 
   <!-- Backdrop para búsqueda en móvil (debajo del header para no tapar el dropdown) -->
   <div id="doc-search-backdrop" class="fixed inset-0 bg-slate-900/25 dark:bg-black/45 backdrop-blur-sm hidden md:hidden z-[60]"></div>
+  <!-- Overlay de búsqueda global en móvil (blur de fondo) -->
+  <div id="mobile-search-overlay" class="fixed inset-0 z-[500] hidden md:hidden bg-slate-900/40 dark:bg-black/55 backdrop-blur-md supports-[backdrop-filter]:backdrop-saturate-150 opacity-0 transition-opacity duration-200 ease-out" aria-hidden="true">
+    <div class="absolute inset-0 flex flex-col items-center mt-6 px-4 pb-6 overflow-y-auto" data-overlay-inner>
+      <div data-panel-root class="w-full max-w-md flex flex-col items-stretch">
+      <div class="relative w-full">
+        <svg class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+  <input id="mobile-search-input" placeholder="Buscar en la documentación…" autocomplete="off" class="w-full pl-12 pr-12 py-3 rounded-xl bg-white/95 dark:bg-slate-950/95 border border-slate-200/70 dark:border-slate-700/70 shadow-2xl text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40 backdrop-blur" aria-autocomplete="list" aria-controls="mobile-search-list" />
+        <button id="mobile-search-close" aria-label="Cerrar búsqueda" class="absolute right-2 top-1/2 -translate-y-1/2 h-9 w-9 flex items-center justify-center rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40">
+          <svg class="w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+      </div>
+      <div id="mobile-search-results" class="mt-3 bg-white/95 dark:bg-slate-950/95 border border-slate-200/70 dark:border-slate-700/60 rounded-xl shadow-xl overflow-hidden w-full backdrop-blur transform transition-all duration-200 ease-out origin-top scale-95 opacity-0 hidden" data-results-panel>
+        <ul id="mobile-search-list" class="overflow-auto max-h-[60vh] p-2 space-y-1 text-sm"></ul>
+      </div>
+      
+      </div>
+    </div>
+  </div>
   <!-- Scrim del sidebar -->
   <div id="sidebar-scrim" class="fixed inset-0 bg-black/40 hidden z-[240] lg:hidden"></div>
 
@@ -617,6 +676,138 @@ const __docIndexJSON = JSON.stringify(__docIndex).replace(/</g,'\\u003c');
 
   // Theme toggle (independent from main layout)
       const themeBtn = document.getElementById('theme-toggle-docs');
+      // Mobile fullscreen search overlay (blur background, show only search UI)
+      (function(){
+        const btn = document.getElementById('search-toggle');
+        const overlay = document.getElementById('mobile-search-overlay');
+        const input = document.getElementById('mobile-search-input');
+        const list = document.getElementById('mobile-search-list');
+        const closeBtn = document.getElementById('mobile-search-close');
+  const inner = overlay?.querySelector('[data-overlay-inner]');
+  const panelRoot = overlay?.querySelector('[data-panel-root]');
+        if(!btn || !overlay || !input || !list) return;
+        let open = false;
+        let indexCache = null;
+        let lastQ = '';
+        const DEBUG_M_SEARCH = false;
+
+        const fetchIndex = async () => {
+          if (indexCache) return indexCache;
+          try {
+            const embedded = document.getElementById('__doc-index');
+            if (embedded?.textContent) {
+              const arr = JSON.parse(embedded.textContent);
+              if (Array.isArray(arr)) { indexCache = { entries: arr }; return indexCache; }
+            }
+          } catch {}
+          indexCache = { entries: [] }; return indexCache;
+        };
+        const normalize = (s='') => s.toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu,'');
+        const expandQuery = (q) => {
+          const nq = normalize(q); const vars = new Set([nq]);
+          if (nq.endsWith('s')) vars.add(nq.replace(/s$/,'')); else vars.add(nq+'s');
+          if (/(precio|precios)/.test(nq)) { vars.add('pricing'); vars.add('price'); vars.add('prices'); }
+          if (/pricing|price|prices/.test(nq)) { vars.add('precio'); vars.add('precios'); }
+          return Array.from(vars);
+        };
+        const score = (q, entry) => {
+          const query = normalize(q);
+          const title = normalize(entry.title||'');
+          const heads = normalize((entry.headings||[]).join(' '));
+            const text = normalize(entry.text||'');
+          let s=0; for(const qv of expandQuery(query)){ if(title.includes(qv)) s+=10; if(heads.includes(qv)) s+=5; if(text.includes(qv)) s+=2; if(title.startsWith(qv)) s+=5; }
+          return s;
+        };
+        const highlight = (snippet, q) => {
+          if(!q) return snippet; const safe = snippet.replace(/[<>]/g,'');
+          try { const n = normalize(q); const parts = n.split(/\s+/).filter(Boolean).slice(0,4); if(!parts.length) return safe; const pattern = parts.map(p=>p.replace(/[-/\\^$*+?.()|[\]{}]/g,'\\$&')).join('|'); const re = new RegExp(`(${pattern})`,'gi'); return safe.replace(re, m=>`<mark class="bg-yellow-200 dark:bg-yellow-500/40 rounded px-0.5">${m}</mark>`);} catch { return safe; }
+        };
+        const panelWrapper = document.querySelector('#mobile-search-results');
+        const render = (items, q) => {
+          list.innerHTML='';
+          const trimmed = (q||'').trim();
+          if(!trimmed){
+            panelWrapper?.classList.add('hidden');
+            return;
+          }
+          if(!items.length){
+            const li=document.createElement('li'); li.className='px-3 py-2 text-slate-500'; li.textContent='Sin resultados'; list.appendChild(li);
+            panelWrapper?.classList.remove('hidden');
+            return;
+          }
+          items.slice(0,12).forEach(it=>{
+            const li=document.createElement('li');
+            li.className='px-3 py-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-900 cursor-pointer';
+            li.innerHTML=`<div class=\"font-medium\">${highlight(it.title||it.url,q)}</div>${it.snippet?`<div class=\"text-xs text-slate-500 line-clamp-2\">${highlight(it.snippet,q)}</div>`:''}`;
+            li.addEventListener('mousedown',e=>{e.preventDefault(); window.location.href=it.url;});
+            list.appendChild(li);
+          });
+          panelWrapper?.classList.remove('hidden');
+        };
+        const search = async (q) => {
+          const { entries } = await fetchIndex();
+          const query = q.trim();
+          if(!query){ list.innerHTML=''; return; }
+          let ranked = entries.map(e=>({...e,_score:score(query,e)})).filter(e=>e._score>0).sort((a,b)=>b._score-a._score);
+          if(!ranked.length){
+            const nq=normalize(query); const variants=expandQuery(nq);
+            const fb = entries.filter(e=>{const t=normalize(e.title||''); const x=normalize(e.text||''); return variants.some(v=>t.includes(v)||x.includes(v));}).slice(0,20);
+            if(fb.length) ranked=fb;
+          }
+          ranked.forEach(e=>{
+            const plain=e.text||''; const nq=normalize(query); const low=normalize(plain); let idx=low.indexOf(nq); let matchLen=nq.length;
+            if(idx===-1){ for(const v of expandQuery(nq)){ const i=low.indexOf(v); if(i!==-1){idx=i; matchLen=Math.max(matchLen,v.length); break;} } }
+            let snippet=''; if(idx!==-1){ const start=Math.max(0,idx-40); snippet=plain.slice(start, idx+matchLen+80).trim(); if(start>0) snippet='…'+snippet; if(idx+matchLen+80<plain.length) snippet+='…'; } else { snippet=plain.slice(0,140)+(plain.length>140?'…':''); }
+            e.snippet=snippet;
+          });
+          render(ranked, query);
+        };
+        function lockScroll(){
+          const sbGap = window.innerWidth - document.documentElement.clientWidth;
+          if (sbGap > 0) document.documentElement.style.paddingRight = sbGap + 'px';
+          document.documentElement.classList.add('overflow-hidden');
+          document.body.classList.add('overflow-hidden');
+          document.documentElement.style.overscrollBehavior = 'none';
+        }
+        function unlockScroll(){
+          document.documentElement.style.paddingRight='';
+          document.documentElement.classList.remove('overflow-hidden');
+            document.body.classList.remove('overflow-hidden');
+          document.documentElement.style.overscrollBehavior='';
+        }
+        const panel = overlay.querySelector('[data-results-panel]');
+        function openOverlay(){
+          if(open) return; open=true; overlay.classList.remove('hidden'); overlay.removeAttribute('aria-hidden'); lockScroll(); btn.setAttribute('aria-expanded','true');
+          requestAnimationFrame(()=>{
+            overlay.classList.remove('opacity-0');
+            panel?.classList.remove('opacity-0','scale-95');
+            input.focus();
+          });
+        }
+        function closeOverlay(){
+          if(!open) return; open=false; overlay.setAttribute('aria-hidden','true'); overlay.classList.add('opacity-0'); panel?.classList.add('opacity-0','scale-95'); btn.setAttribute('aria-expanded','false');
+          setTimeout(()=>{ if(!open){ overlay.classList.add('hidden'); unlockScroll(); list.innerHTML=''; input.value=''; panelWrapper?.classList.add('hidden'); } }, 180);
+        }
+        btn.addEventListener('click', ()=> open ? closeOverlay() : openOverlay());
+        closeBtn?.addEventListener('click', ()=> closeOverlay());
+        // Outside click (mousedown for quicker response & to avoid focus shift before closing)
+        overlay.addEventListener('mousedown', (e)=>{
+          if(!open) return;
+            // If no panelRoot (fallback), retain previous behavior
+          if(!panelRoot){
+            if(e.target === overlay) { closeOverlay(); }
+            else if(inner && !inner.contains(e.target as Node)) { closeOverlay(); }
+            return;
+          }
+          if(!panelRoot.contains(e.target as Node)) {
+            // Ensure event originated within overlay bounds
+            if(overlay.contains(e.target as Node)) closeOverlay();
+          }
+        }, { capture: true });
+        document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeOverlay(); });
+  let deb; input.addEventListener('input', e=>{ const q=e.target.value; lastQ=q; clearTimeout(deb); deb=setTimeout(()=>search(q),100); if(!q.trim()){ panelWrapper?.classList.add('hidden'); } });
+        if(DEBUG_M_SEARCH) console.log('[mobile-search] overlay inicializado');
+      })();
       const sun = document.getElementById('icon-sun');
       const moon = document.getElementById('icon-moon');
       function reflectThemeIcons() {
@@ -637,8 +828,11 @@ const __docIndexJSON = JSON.stringify(__docIndex).replace(/</g,'\\u003c');
       reflectThemeIcons();
       themeBtn?.addEventListener('click', () => {
         const isDark = document.documentElement.classList.toggle('dark');
-        localStorage.setItem('color-theme', isDark ? 'dark' : 'light');
+        sessionStorage.setItem('color-theme', isDark ? 'dark' : 'light');
         document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', isDark ? '#0f172a' : '#3b82f6');
         reflectThemeIcons();
       });
 
