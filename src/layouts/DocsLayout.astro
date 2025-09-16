@@ -5,6 +5,28 @@ export interface Props {
 }
 
 const { title, description = 'Documentación de precios y guía de instalación' } = Astro.props;
+// Ruta actual y utilidades para breadcrumb y estados activos
+const pathname = Astro.url?.pathname ?? '/';
+const currentPath = pathname.replace(/\/$/, '');
+const parts = pathname.split('/').filter(Boolean);
+let docIdx = parts.indexOf('docs');
+const crumbParts = (docIdx !== -1) ? parts.slice(docIdx + 1) : parts;
+/** Mapa de localización para slugs comunes */
+const LABELS: Record<string,string> = {
+  'pricing': 'Precios',
+  'cuenta': 'Cuenta',
+  'empezar': 'Empezar',
+  'instalacion': 'Instalación'
+};
+/** Transforma slug a Título simple y localizado */
+const toTitle = (s:string) => {
+  const raw = decodeURIComponent(s);
+  const key = raw.toLowerCase();
+  const localized = LABELS[key];
+  if (localized) return localized;
+  return raw.replace(/[-_]+/g,' ').replace(/\b\w/g, c=>c.toUpperCase());
+};
+const crumbs = crumbParts.map((p) => ({ label: toTitle(p) }));
 
 // Construir índice simple de documentación en build y embebido como JSON para el cliente.
 // Usamos el query ?raw para obtener el contenido fuente de cada MDX.
@@ -40,6 +62,8 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
   if(!url.startsWith('/')) url = '/' + url;
   return { url, title, headings, text };
 }).filter(r => r.url.startsWith('/docs/'));
+// Serializar índice para incrustar en el HTML de forma segura
+const __docIndexJSON = JSON.stringify(__docIndex).replace(/</g,'\\u003c');
 ---
 
 <!DOCTYPE html>
@@ -51,58 +75,86 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
     <meta name="theme-color" content="#3b82f6" />
     <link rel="icon" type="image/png" href="/assets/pynark_favicon.png" />
   <title>{title}</title>
-  {(() => { const json = JSON.stringify(__docIndex).replace(/</g,'\\u003c'); return <script type="application/json" id="__doc-index" set:html={json} /> })()}
+  <script type="application/json" id="__doc-index" set:html={__docIndexJSON}></script>
   </head>
   <body class="bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
     <!-- Topbar estilo Cursor Docs -->
-  <header class="sticky top-0 z-[80] border-b border-slate-200/60 dark:border-slate-800/70 bg-white/70 dark:bg-slate-950/70 backdrop-blur">
-      <div class="max-w-7xl mx-auto h-14 px-4 sm:px-6 lg:px-8 flex items-center gap-3">
-        <button id="sidebar-open" class="lg:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
-        </button>
+  <header class="sticky top-0 z-[200] border-b border-slate-200/60 dark:border-slate-800/70 bg-white dark:bg-slate-950">
+  <div id="docs-header-row" class="max-w-[90rem] mx-auto min-h-14 px-4 py-2 sm:px-6 lg:px-8 grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
         <a href="/" class="flex items-center gap-2 pr-2">
           <img src="/assets/pynark_favicon.png" class="w-6 h-6" alt="Pynark" />
           <span class="font-semibold hidden sm:block">Pynark Docs</span>
         </a>
-        <div class="flex-1 max-w-[640px]">
+        <div class="min-w-0 max-w-[640px] w-full">
           <div class="relative z-[140]" id="doc-search">
-            <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input id="doc-search-input" placeholder="Buscar en la documentación…" class="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40" autocomplete="off" aria-autocomplete="list" aria-controls="doc-search-list" />
-            <div id="doc-search-dropdown" class="absolute left-0 right-0 top-full mt-2 md:mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl md:shadow-lg overflow-hidden hidden z-[130]">
+            <svg class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="doc-search-input" placeholder="Buscar en la documentación…" class="w-full pl-11 pr-3 py-2 rounded-lg bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/40" autocomplete="off" aria-autocomplete="list" aria-controls="doc-search-list" />
+            <div id="doc-search-dropdown" class="absolute left-0 right-0 top-full mt-2 md:mt-1 w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg shadow-2xl md:shadow-lg overflow-hidden hidden z-[220]">
               <ul id="doc-search-list" class="max-h-[70vh] md:max-h-72 overflow-auto text-sm"></ul>
             </div>
           </div>
         </div>
-        <a href="/pricing" class="hidden md:inline text-sm text-slate-600 dark:text-slate-300 hover:text-primary-600 dark:hover:text-primary-400">Volver a Pricing</a>
-        <button id="theme-toggle-docs" class="p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900">
-          <svg id="icon-moon" class="hidden w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M21 12.79A9 9 0 1 1 11.21 3a7 7 0 0 0 9.79 9.79Z"/></svg>
-          <svg id="icon-sun" class="hidden w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4V2m0 20v-2m8-8h2M2 12h2m13.657-6.343 1.414-1.414M4.929 19.071l1.414-1.414m12.728 0 1.414 1.414M6.343 5.657 4.929 4.243"/><circle cx="12" cy="12" r="4"/></svg>
+        <!-- Theme toggle moved to top-right -->
+        <button id="theme-toggle-docs" class="h-11 w-11 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/40" aria-label="Tema: Claro" title="Tema: Claro">
+          <svg id="icon-moon" class="hidden w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <svg id="icon-sun" class="hidden w-5 h-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2m10-10h-2M4 12H2m15.556-7.556-1.414 1.414M6.343 17.657l-1.414 1.414m12.728 0-1.414-1.414M6.343 6.343 4.929 4.929"/></svg>
         </button>
+        
+      </div>
+
+      <!-- Breadcrumb bajo la primera fila -->
+      <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 pb-2">
+        <div class="grid grid-cols-1 lg:grid-cols-[220px_minmax(65ch,1fr)_220px] gap-6 items-center">
+          <nav aria-label="Breadcrumb" class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 flex items-center gap-2 lg:col-start-2">
+            <!-- Único botón de menú hamburguesa en móvil -->
+            <button id="sidebar-open" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false" class="lg:hidden rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900 h-11 w-11 flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M3 12h18"/><path d="M3 18h18"/></svg>
+            </button>
+            <ol class="flex flex-wrap items-center gap-1">
+              {crumbs.map((c, i) => (
+                i < crumbs.length - 1 ? (
+                  <li class="flex items-center gap-1">
+                    <span>{c.label}</span>
+                    <span class="mx-1">›</span>
+                  </li>
+                ) : (
+                  <li class="text-slate-700 dark:text-slate-200 font-medium">{c.label}</li>
+                )
+              ))}
+            </ol>
+          </nav>
+          
+        </div>
       </div>
   </header>
 
   <!-- Backdrop para búsqueda en móvil (debajo del header para no tapar el dropdown) -->
   <div id="doc-search-backdrop" class="fixed inset-0 bg-slate-900/25 dark:bg-black/45 backdrop-blur-sm hidden md:hidden z-[60]"></div>
+  <!-- Scrim del sidebar -->
+  <div id="sidebar-scrim" class="fixed inset-0 bg-black/40 hidden z-[240] lg:hidden"></div>
 
-    <!-- Grid de 3 columnas: sidebar / contenido / ToC -->
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-[260px_minmax(0,1fr)_260px] gap-6">
+  <!-- Grid de 3 columnas: sidebar / contenido / ToC -->
+  <div class="max-w-[90rem] mx-auto px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-[220px_minmax(65ch,1fr)_220px] gap-6 lg:gap-8 xl:gap-10 relative">
       <!-- Sidebar -->
-  <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-72 bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800 p-4 overflow-y-auto transform -translate-x-full transition-transform duration-200 lg:static lg:translate-x-0 lg:w-auto lg:p-0 lg:border-0">
-        <nav class="lg:sticky lg:top-24 space-y-6 text-sm">
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-[260] w-72 bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100 border-r border-slate-200 dark:border-slate-800 p-4 overflow-y-auto transform -translate-x-full transition-transform duration-200 shadow-2xl lg:static lg:translate-x-0 lg:w-auto lg:p-0 lg:border-r lg:pr-6 lg:shadow-none lg:z-auto lg:sticky lg:top-[var(--docs-header-h,5rem)] lg:self-start lg:max-h-[calc(100vh-var(--docs-header-h,5rem))] lg:overflow-y-auto" aria-label="Menú lateral">
+        <button id="sidebar-close" aria-label="Cerrar menú" class="lg:hidden absolute top-2 right-2 h-11 w-11 flex items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-900">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        </button>
+  <nav class="space-y-6 text-sm" aria-label="Navegación de documentación">
           <div class="group">
-            <button class="w-full flex items-center justify-between text-left text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            <button class="w-full flex items-center justify-between text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
               <span>Empezar</span>
             </button>
             <ul class="space-y-1 pl-1">
-              <li><a class="block px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-900" href="/docs/Empezar/Instalacion">Instalación</a></li>
+              <li><a class={`block px-2 py-1 rounded text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 ${currentPath === '/docs/Empezar/Instalacion' ? 'bg-slate-100 dark:bg-slate-900 text-primary-600' : ''}`} href="/docs/Empezar/Instalacion">Instalación</a></li>
             </ul>
           </div>
           <div class="group">
-            <button class="w-full flex items-center justify-between text-left text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">
+            <button class="w-full flex items-center justify-between text-left text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2">
               <span>Cuenta</span>
             </button>
             <ul class="space-y-1 pl-1">
-              <li><a class="block px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-900" href="/docs/cuenta/pricing">Pricing</a></li>
+              <li><a class={`block px-2 py-1 rounded text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-900 ${currentPath === '/docs/cuenta/pricing' ? 'bg-slate-100 dark:bg-slate-900 text-primary-600' : ''}`} href="/docs/cuenta/pricing">Precios</a></li>
             </ul>
           </div>
         </nav>
@@ -110,16 +162,16 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
 
       <!-- Contenido principal -->
       <main class="min-w-0">
-        <article id="doc-article" data-pagefind-body class="prose prose-slate dark:prose-invert max-w-none">
+        <article id="doc-article" data-pagefind-body class="prose prose-slate dark:prose-invert mx-auto max-w-[78ch]">
           <slot />
         </article>
       </main>
 
       <!-- Tabla de contenidos (ToC) -->
-      <aside class="hidden xl:block">
-        <div class="sticky top-24">
+      <aside class="hidden lg:block">
+        <div class="sticky top-[var(--docs-header-h,5rem)] border-l border-slate-200 dark:border-slate-800 pl-6">
           <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">En esta página</div>
-          <nav id="toc" class="text-sm space-y-1"></nav>
+          <nav id="toc" class="text-[0.95rem] leading-6 space-y-1.5"></nav>
         </div>
       </aside>
     </div>
@@ -137,6 +189,7 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
         const dropdown = document.getElementById('doc-search-dropdown');
         const list = document.getElementById('doc-search-list');
   const backdrop = document.getElementById('doc-search-backdrop');
+  const sidebarScrim = document.getElementById('sidebar-scrim');
   const DEBUG_SEARCH = true;
         if (!container || !input || !dropdown || !list) return;
 
@@ -152,17 +205,36 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
           if (!isMobile) return; // sólo en móvil
           const hamburger = document.getElementById('sidebar-open');
           const themeBtn = document.getElementById('theme-toggle-docs');
+          const headerRow = document.getElementById('docs-header-row');
           if (on) {
             container.classList.remove('relative');
-            container.classList.add('fixed','inset-x-0','top-2','px-3','w-full');
+            container.classList.add('fixed','inset-x-0','top-2','px-3','w-full','z-[180]');
+            // Colocar el toggle a la derecha del input dentro del overlay
+            if (themeBtn && !container.contains(themeBtn)) {
+              themeBtn.dataset._returnParent = 'header'; // marca para saber que volvemos al header
+              container.appendChild(themeBtn);
+            }
+            themeBtn?.classList.add('absolute','right-2','top-1/2','-translate-y-1/2');
+            themeBtn?.classList.remove('opacity-0','pointer-events-none');
+            input.classList.add('pr-12');
             hamburger?.classList.add('opacity-0','pointer-events-none');
-            themeBtn?.classList.add('opacity-0','pointer-events-none');
             document.body.classList.add('overflow-hidden');
+            // cerrar sidebar si estuviera abierto
+            const sb = document.getElementById('sidebar');
+            sb?.classList.add('-translate-x-full');
+            sidebarScrim?.classList.add('hidden');
           } else {
             container.classList.remove('fixed','inset-x-0','top-2','px-3','w-full');
+            container.classList.remove('z-[180]');
             container.classList.add('relative');
+            // Regresar el toggle a la fila del header
+            if (themeBtn && headerRow && themeBtn.dataset._returnParent === 'header') {
+              headerRow.appendChild(themeBtn);
+              delete themeBtn.dataset._returnParent;
+            }
+            themeBtn?.classList.remove('absolute','right-2','top-1/2','-translate-y-1/2');
+            input.classList.remove('pr-12');
             hamburger?.classList.remove('opacity-0','pointer-events-none');
-            themeBtn?.classList.remove('opacity-0','pointer-events-none');
             document.body.classList.remove('overflow-hidden');
           }
         };
@@ -213,17 +285,28 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
           .toLowerCase()
           .normalize('NFD')
           .replace(/\p{Diacritic}/gu,'');
+        const expandQuery = (q) => {
+          const nq = normalize(q);
+          const vars = new Set([nq]);
+          if (nq.endsWith('s')) vars.add(nq.replace(/s$/, ''));
+          else vars.add(nq + 's');
+          if (/(precio|precios)/.test(nq)) { vars.add('pricing'); vars.add('price'); vars.add('prices'); }
+          if (/pricing|price|prices/.test(nq)) { vars.add('precio'); vars.add('precios'); }
+          return Array.from(vars);
+        };
+
         const score = (q, entry) => {
           const query = normalize(q);
           const title = normalize(entry.title || '');
           const heads = normalize((entry.headings || []).join(' \n '));
           const text = normalize(entry.text || '');
           let s = 0;
-          if (title.includes(query)) s += 10;
-          if (heads.includes(query)) s += 5;
-          if (text.includes(query)) s += 2;
-          // bonus por prefijo
-          if (title.startsWith(query)) s += 5;
+          for (const qv of expandQuery(query)) {
+            if (title.includes(qv)) s += 10;
+            if (heads.includes(qv)) s += 5;
+            if (text.includes(qv)) s += 2;
+            if (title.startsWith(qv)) s += 5;
+          }
           return s;
         };
 
@@ -285,39 +368,11 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
 
         const search = async (q) => {
           const data = await fetchIndex();
-          // Pagefind fallback mode
-          if (data.usePagefind) {
-            try {
-              const query = q.trim();
-              if (!query) { dropdown.classList.add('hidden'); showBackdrop(false); setMobileOverlay(false); input.setAttribute('aria-expanded','false'); return; }
-              const pfRes = await window.pagefind.search(query);
-              const items = await Promise.all((pfRes?.results || []).slice(0,30).map(async r => {
-                const d = await r.data();
-                return {
-                  url: d.url,
-                  title: d.meta?.title || d.url,
-                  snippet: d.content_excerpt || (d.content || '').slice(0,160),
-                  _score: r.score || 0
-                };
-              }));
-              // Ordenar por score desc
-              items.sort((a,b)=> (b._score||0) - (a._score||0));
-              render(items, q);
-              return;
-            } catch (e) {
-              console.warn('Error buscando con Pagefind', e);
-              dropdown.classList.add('hidden');
-              showBackdrop(false);
-              setMobileOverlay(false);
-              input.setAttribute('aria-expanded','false');
-              return;
-            }
-          }
           const entries = data.entries || [];
           const query = q.trim();
           if (!query) { dropdown.classList.add('hidden'); showBackdrop(false); setMobileOverlay(false); input.setAttribute('aria-expanded','false'); return; }
           if (DEBUG_SEARCH) console.info('[Search] entradas disponibles', entries.length);
-          const ranked = entries
+          let ranked = entries
             .map((e) => ({
               ...e,
               _score: score(query, e),
@@ -329,23 +384,49 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
           if (!ranked.length) {
             // fallback substring
             const nq = normalize(query);
-            const fb = entries.filter(e => normalize(e.title||'').includes(nq) || normalize(e.text||'').includes(nq)).slice(0,20);
+            const variants = expandQuery(nq);
+            const fb = entries.filter(e => {
+              const t = normalize(e.title||'');
+              const x = normalize(e.text||'');
+              return variants.some(v => t.includes(v) || x.includes(v));
+            }).slice(0,20);
             if (DEBUG_SEARCH) console.info('[Search] fallback substring length', fb.length);
             if (fb.length) {
               fb.forEach((e) => {
                 const plain = e.text || '';
                 const low = normalize(plain);
-                const idx = low.indexOf(nq);
+                let idx = -1; let matchLen = nq.length;
+                for (const v of variants) { const i = low.indexOf(v); if (i !== -1) { idx = i; matchLen = Math.max(matchLen, v.length); break; } }
                 let snippet = plain.slice(0, 140) + (plain.length>140?'…':'');
                 if (idx !== -1) {
                   const start = Math.max(0, idx - 40);
-                  snippet = plain.slice(start, idx + nq.length + 80).trim();
+                  snippet = plain.slice(start, idx + matchLen + 80).trim();
                   if (start > 0) snippet = '…' + snippet;
-                  if (idx + nq.length + 80 < plain.length) snippet += '…';
+                  if (idx + matchLen + 80 < plain.length) snippet += '…';
                 }
                 e.snippet = snippet;
               });
-              render(fb, query); return;
+              ranked = fb;
+            }
+          }
+
+          // Si aún no hay resultados y Pagefind está listo, intentar también como fallback
+          if ((!ranked || !ranked.length) && window.pagefind) {
+            try {
+              const pfRes = await window.pagefind.search(query);
+              const items = await Promise.all((pfRes?.results || []).slice(0,30).map(async r => {
+                const d = await r.data();
+                return {
+                  url: d.url,
+                  title: d.meta?.title || d.url,
+                  snippet: d.content_excerpt || (d.content || '').slice(0,160),
+                  _score: r.score || 0
+                };
+              }));
+              items.sort((a,b)=> (b._score||0) - (a._score||0));
+              ranked = items;
+            } catch (e) {
+              console.warn('Error buscando con Pagefind', e);
             }
           }
 
@@ -355,13 +436,16 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
             const nq = normalize(query);
             // buscar ventana alrededor de la primera coincidencia normalizada
             const low = normalize(plain);
-            const idx = low.indexOf(nq);
+            let idx = low.indexOf(nq); let matchLen = nq.length;
+            if (idx === -1) {
+              for (const v of expandQuery(nq)) { const i = low.indexOf(v); if (i !== -1) { idx = i; matchLen = Math.max(matchLen, v.length); break; } }
+            }
             let snippet = '';
             if (idx !== -1) {
               const start = Math.max(0, idx - 40);
-              snippet = plain.slice(start, idx + nq.length + 80).trim();
+              snippet = plain.slice(start, idx + matchLen + 80).trim();
               if (start > 0) snippet = '…' + snippet;
-              if (idx + nq.length + 80 < plain.length) snippet += '…';
+              if (idx + matchLen + 80 < plain.length) snippet += '…';
             } else {
               snippet = plain.slice(0, 140) + (plain.length>140 ? '…':'');
             }
@@ -457,30 +541,98 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
         });
       })();
 
-      // Sidebar mobile toggle
+      // Sidebar mobile toggle + scrim + a11y focus trap
       const sidebar = document.getElementById('sidebar');
       const openBtn = document.getElementById('sidebar-open');
-      openBtn?.addEventListener('click', () => sidebar?.classList.toggle('-translate-x-full'));
-      // Close on click outside (mobile)
-      document.addEventListener('click', (e) => {
+      const closeBtn = document.getElementById('sidebar-close');
+      const scrim = document.getElementById('sidebar-scrim');
+      let lastFocus = null;
+
+      // Hard reset for the mobile search overlay if it stayed active
+      function resetSearchOverlayIfActive() {
+        const container = document.getElementById('doc-search');
+        const input = document.getElementById('doc-search-input');
+        const dropdown = document.getElementById('doc-search-dropdown');
+        const backdrop = document.getElementById('doc-search-backdrop');
+        const hamburger = document.getElementById('sidebar-open');
+        const themeBtn = document.getElementById('theme-toggle-docs');
+        const headerRow = document.getElementById('docs-header-row');
+        if (!container) return;
+        if (container.classList.contains('fixed')) {
+          container.classList.remove('fixed','inset-x-0','top-2','px-3','w-full');
+          container.classList.add('relative');
+          if (themeBtn && headerRow && themeBtn.dataset._returnParent === 'header') {
+            headerRow.appendChild(themeBtn);
+            delete themeBtn.dataset._returnParent;
+          }
+          themeBtn?.classList.remove('absolute','right-2','top-1/2','-translate-y-1/2');
+          input?.classList.remove('pr-12');
+          hamburger?.classList.remove('opacity-0','pointer-events-none');
+        }
+        dropdown?.classList.add('hidden');
+        backdrop?.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+      }
+
+      function getFocusable(container) {
+        return Array.from(container.querySelectorAll('a, button, input, select, textarea, [tabindex]:not([tabindex="-1"])')).filter(el => !el.hasAttribute('disabled') && !el.getAttribute('aria-hidden'));
+      }
+      function openSidebar() {
         if (!sidebar) return;
-        if (window.innerWidth >= 1024) return;
-        const t = e.target;
-        const withinSidebar = t instanceof Node ? sidebar.contains(t) : false;
-        const clickedOpen = t instanceof Node && openBtn ? openBtn.contains(t) : false;
-        if (!withinSidebar && !clickedOpen && !sidebar.classList.contains('-translate-x-full')) {
-          sidebar.classList.add('-translate-x-full');
+        // cerrar búsqueda si está activa
+        resetSearchOverlayIfActive();
+        // mover estados
+        lastFocus = document.activeElement;
+        sidebar.classList.remove('-translate-x-full');
+        openBtn?.setAttribute('aria-expanded','true');
+        scrim?.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+        // foco al primer foco navegable
+        const focusables = getFocusable(sidebar);
+        (focusables[0] || closeBtn || sidebar).focus();
+      }
+      function closeSidebar() {
+        if (!sidebar) return;
+        sidebar.classList.add('-translate-x-full');
+        openBtn?.setAttribute('aria-expanded','false');
+        scrim?.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+        if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
+      }
+
+      openBtn?.addEventListener('click', () => openSidebar());
+      closeBtn?.addEventListener('click', () => closeSidebar());
+      scrim?.addEventListener('click', () => closeSidebar());
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && scrim && !scrim.classList.contains('hidden')) closeSidebar();
+        if (e.key === 'Tab' && scrim && !scrim.classList.contains('hidden') && sidebar) {
+          const focusables = getFocusable(sidebar);
+          if (!focusables.length) return;
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
         }
       });
 
-      // Theme toggle (independent from main layout)
+  // Theme toggle (independent from main layout)
       const themeBtn = document.getElementById('theme-toggle-docs');
       const sun = document.getElementById('icon-sun');
       const moon = document.getElementById('icon-moon');
       function reflectThemeIcons() {
         const isDark = document.documentElement.classList.contains('dark');
-        if (isDark) { sun?.classList.remove('hidden'); moon?.classList.add('hidden'); }
-        else { moon?.classList.remove('hidden'); sun?.classList.add('hidden'); }
+        const btn = document.getElementById('theme-toggle-docs');
+        if (isDark) {
+          sun?.classList.remove('hidden');
+          moon?.classList.add('hidden');
+          btn?.setAttribute('aria-label','Tema: Oscuro');
+          btn?.setAttribute('title','Tema: Oscuro');
+        } else {
+          moon?.classList.remove('hidden');
+          sun?.classList.add('hidden');
+          btn?.setAttribute('aria-label','Tema: Claro');
+          btn?.setAttribute('title','Tema: Claro');
+        }
       }
       reflectThemeIcons();
       themeBtn?.addEventListener('click', () => {
@@ -489,6 +641,18 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
         document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
         reflectThemeIcons();
       });
+
+      // Compute dynamic header height to align H1 and ToC start
+      ;(function setHeaderHeightVar(){
+        const header = document.querySelector('header.sticky');
+        const root = document.documentElement;
+        function apply(){
+          const h = header?.getBoundingClientRect().height || 80;
+          root.style.setProperty('--docs-header-h', Math.round(h + 16) + 'px');
+        }
+        apply();
+        window.addEventListener('resize', () => { apply(); });
+      })();
 
       // Generate anchors and ToC from article headings (h2, h3)
       const article = document.getElementById('doc-article');
@@ -507,8 +671,8 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
         if (!article || !toc) return;
         const headings = Array.from(article.querySelectorAll('h2, h3'));
         toc.innerHTML = '';
-        const list = document.createElement('ul');
-        list.className = 'space-y-1';
+  const list = document.createElement('ul');
+  list.className = 'space-y-1.5';
         headings.forEach((h) => {
           if (!h.id) {
             h.id = slugify(h.textContent || '');
@@ -526,7 +690,7 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
           const link = document.createElement('a');
           link.href = `#${h.id}`;
           link.textContent = h.textContent || '';
-          link.className = `block px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-900 ${h.tagName === 'H3' ? 'ml-3' : ''}`;
+          link.className = `block px-2 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-900 ${h.tagName === 'H3' ? 'ml-3 text-[0.9rem]' : 'font-medium'}`;
           li.appendChild(link);
           list.appendChild(li);
         });
@@ -553,12 +717,24 @@ const __docIndex = Object.entries(rawModules).map(([origPath, content]) => {
 </html>
 
 <style>
+  :root {
+    --docs-header-h: 5rem; /* fallback */
+  }
   .prose :where(code):not(:where(pre code)) {
     background: rgba(148,163,184,0.15);
     padding: 0.2rem 0.35rem;
     border-radius: 0.375rem;
   }
-  .prose :where(h2,h3) {
-    scroll-margin-top: 96px;
-  }
+  .prose :where(h1,h2,h3,h4) { scroll-margin-top: var(--docs-header-h); }
+  /* Vertical rhythm improvements */
+  .prose :where(h1) { margin-top: 0; margin-bottom: 1.1rem; }
+  .prose :where(p) { margin-top: 0.9rem; margin-bottom: 0.9rem; }
+  .prose :where(h2) { margin-top: 2.4rem; margin-bottom: 0.9rem; }
+  .prose :where(h3) { margin-top: 1.6rem; margin-bottom: 0.6rem; }
+  .prose :where(ul,ol) { margin-top: 0.75rem; margin-bottom: 1rem; }
+  .prose :where(li > ul, li > ol) { margin-top: 0.25rem; margin-bottom: 0.25rem; }
+  /* TOC links */
+  #toc a { color: inherit; }
+  #toc a:hover { color: var(--tw-prose-links); }
+  #toc a.text-primary-600 { font-weight: 600; }
 </style>
