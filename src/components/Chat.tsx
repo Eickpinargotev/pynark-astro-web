@@ -1,4 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
 import { Send, Trash2, Loader2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -726,9 +729,32 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
                     : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-sm'
                 }`}
               >
-                <p className={`text-sm leading-relaxed ${
-                  message.isUser ? 'text-right' : 'text-left'
-                }`}>{message.content}</p>
+                {message.isUser ? (
+                  <p className={`text-sm leading-relaxed ${message.isUser ? 'text-right' : 'text-left'}`}>
+                    {message.content}
+                  </p>
+                ) : (
+                  <div className={`text-sm leading-relaxed prose prose-slate dark:prose-invert max-w-none ${message.isUser ? 'text-right' : 'text-left'}`}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkBreaks]}
+                      components={{
+                        p: (props: any) => <p {...props} className="mb-2 last:mb-0" />,
+                        ul: (props: any) => <ul {...props} className="list-disc pl-5 mb-2" />,
+                        ol: (props: any) => <ol {...props} className="list-decimal pl-5 mb-2" />,
+                        li: (props: any) => <li {...props} className="mb-1 last:mb-0" />,
+                        strong: (props: any) => <strong {...props} className="font-semibold" />,
+                        em: (props: any) => <em {...props} className="italic" />,
+                        code: ({inline, ...props}: any) => inline ? (
+                          <code {...props} className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-600 text-[0.75rem]" />
+                        ) : (
+                          <code {...props} className="block px-3 py-2 rounded bg-slate-200 dark:bg-slate-600 text-[0.75rem] whitespace-pre-wrap" />
+                        )
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
+                )}
                 <p className={`text-xs mt-1 text-right ${
                   message.isUser ? 'text-primary-100' : 'text-slate-500 dark:text-slate-400'
                 }`}>
