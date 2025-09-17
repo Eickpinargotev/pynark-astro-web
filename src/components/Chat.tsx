@@ -55,7 +55,8 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
   const hasSentAutoDeleteRef = useRef(false);
   const hasShownTimeoutRef = useRef(false);
   const inactivityTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const INACTIVITY_MS = 60 * 1000;
+  // Tiempo de inactividad antes de mostrar el mensaje de timeout (2 minutos)
+  const INACTIVITY_MS = 120 * 1000; // 2 minutos
   const suppressTimeoutRef = useRef(false);
   const suppressNextAutoScrollRef = useRef(false);
   const isAtBottomRef = useRef(true);
@@ -201,7 +202,7 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
     }
     setInputValue('');
     setChatState(prev => ({ ...prev, error: null }));
-    // Resetear banderas y programar temporizador local de inactividad (1 minuto)
+  // Resetear banderas y programar temporizador local de inactividad (2 minutos)
     hasShownTimeoutRef.current = false;
     hasSentAutoDeleteRef.current = false;
     if (inactivityTimerRef.current) {
