@@ -60,7 +60,7 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
               <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white">Agentes de IA que responden 24/7</h3>
             </div>
             <ul class="mt-4 space-y-3 text-slate-600 dark:text-slate-300">
-              <li class="flex gap-3"><span class="mt-1">🎧</span><span>Atención al cliente automatizada con respuestas naturales, precisas y consistentes, y handoff a humano cuando haga falta.</span></li>
+              <li class="flex gap-3"><span class="mt-1">🎧</span><span>Atención al cliente automatizada with respuestas naturales, precisas y consistentes, y handoff a humano cuando haga falta.</span></li>
               <li class="flex gap-3"><span class="mt-1">📚</span><span>Conocimiento actualizado: conexión a FAQs, catálogo, políticas y documentos internos.</span></li>
               <li class="flex gap-3"><span class="mt-1">✨</span><span>Control de tono y marca: personalidad configurable para mantener tu identidad.</span></li>
             </ul>
@@ -136,14 +136,15 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
         <!-- Card 1 -->
-        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all">
-          <div class="absolute -top-5 left-8">
+        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all text-center md:text-left">
+          <div class="absolute -top-5 left-1/2 -translate-x-1/2 md:left-8 md:translate-x-0">
             <div class="w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-secondary-600 flex items-center justify-center text-2xl shadow-lg">
               <span class="text-white font-bold">1</span>
             </div>
           </div>
-          <div class="mt-6 text-5xl">🛠️</div>
-          <h3 class="mt-4 font-display text-xl font-semibold text-slate-900 dark:text-white">
+          <div class="mt-6 text-5xl mx-auto md:mx-0">🛠️</div>
+          <p class="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">Paso 1/4</p>
+          <h3 class="mt-3 font-display text-xl font-semibold text-slate-900 dark:text-white">
             Diagnóstico
           </h3>
           <p class="mt-2 text-slate-600 dark:text-slate-300">
@@ -152,14 +153,15 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
         </div>
 
         <!-- Card 2 -->
-        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all">
-          <div class="absolute -top-5 left-8">
+        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all text-center md:text-left">
+          <div class="absolute -top-5 left-1/2 -translate-x-1/2 md:left-8 md:translate-x-0">
             <div class="w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-secondary-600 flex items-center justify-center text-2xl shadow-lg">
               <span class="text-white font-bold">2</span>
             </div>
           </div>
-          <div class="mt-6 text-5xl">🤖</div>
-          <h3 class="mt-4 font-display text-xl font-semibold text-slate-900 dark:text-white">
+          <div class="mt-6 text-5xl mx-auto md:mx-0">🤖</div>
+          <p class="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">Paso 2/4</p>
+          <h3 class="mt-3 font-display text-xl font-semibold text-slate-900 dark:text-white">
             Setup de vertical
           </h3>
           <p class="mt-2 text-slate-600 dark:text-slate-300">
@@ -168,14 +170,15 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
         </div>
 
         <!-- Card 3 -->
-        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all">
-          <div class="absolute -top-5 left-8">
+        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all text-center md:text-left">
+          <div class="absolute -top-5 left-1/2 -translate-x-1/2 md:left-8 md:translate-x-0">
             <div class="w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-secondary-600 flex items-center justify-center text-2xl shadow-lg">
               <span class="text-white font-bold">3</span>
             </div>
           </div>
-          <div class="mt-6 text-5xl">🧪</div>
-          <h3 class="mt-4 font-display text-xl font-semibold text-slate-900 dark:text-white">
+          <div class="mt-6 text-5xl mx-auto md:mx-0">🧪</div>
+          <p class="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">Paso 3/4</p>
+          <h3 class="mt-3 font-display text-xl font-semibold text-slate-900 dark:text-white">
             Go-live con monitoreo
           </h3>
           <p class="mt-2 text-slate-600 dark:text-slate-300">
@@ -184,20 +187,29 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
         </div>
 
         <!-- Card 4 -->
-        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all">
-          <div class="absolute -top-5 left-8">
+        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all text-center md:text-left">
+          <div class="absolute -top-5 left-1/2 -translate-x-1/2 md:left-8 md:translate-x-0">
             <div class="w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-secondary-600 flex items-center justify-center text-2xl shadow-lg">
               <span class="text-white font-bold">4</span>
             </div>
           </div>
-          <div class="mt-6 text-5xl">🚀</div>
-          <h3 class="mt-4 font-display text-xl font-semibold text-slate-900 dark:text-white">
+          <div class="mt-6 text-5xl mx-auto md:mx-0">🚀</div>
+          <p class="mt-2 text-xs font-medium text-slate-500 dark:text-slate-400">Paso 4/4</p>
+          <h3 class="mt-3 font-display text-xl font-semibold text-slate-900 dark:text-white">
             Optimización mensual
           </h3>
           <p class="mt-2 text-slate-600 dark:text-slate-300">
             Reportes detallados con insights y mejoras continuas del rendimiento
           </p>
         </div>
+      </div>
+
+      <!-- CTA under process section -->
+      <div class="mt-12 text-center">
+        <a href="/#contact" class="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-300">
+          Comenzar diagnóstico
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+        </a>
       </div>
     </div>
   </section>
