@@ -29,7 +29,6 @@ const sessionTracking = new Map<string, SessionInfo>();
 // Config
 const TTL_MS = 1 * 60 * 1000; // 1 minuto
 const INACTIVITY_TTL_MS = TTL_MS; // 1 minuto sin actividad del usuario => /delete
-const SESSION_GRACE_MS = 30 * 1000; // tiempo de gracia para limpiar una vez enviado /delete
 const MAX_WAIT_TIME_MS = 60 * 1000; // 60 segundos máximo de espera para "pending"
 const POLLING_FREQUENCY_MS = 2 * 1000; // Esperamos polling cada 2 segundos
 const DELETE_TRIGGER = '/delete';
@@ -65,7 +64,7 @@ const enqueueResponse = (session_id: string, message: string, type: 'agent' | 's
     message,
     type,
     createdAt: Date.now(),
-    id: `${session_id}:${Date.now()}:${Math.random().toString(36).substr(2, 9)}`,
+    id: `${session_id}:${Date.now()}:${Math.random().toString(36).slice(2, 11)}`,
     consumed: false
   };
   const q = responseQueues.get(session_id) || [];
@@ -434,7 +433,6 @@ export const PUT: APIRoute = async ({ request }) => {
 
 // Ejecutar purgeOld periódicamente para detectar inactividad aunque no haya requests
 // Evita fugas de memoria cuando el usuario cierra la pestaña y nunca consume '/delete'
-declare const global: any;
 const g: any = (globalThis as any);
 if (!g.__pynarkCleanupInterval) {
   try {

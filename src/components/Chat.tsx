@@ -241,41 +241,6 @@ const Chat: React.FC<ChatProps> = ({ agentConfig }) => {
         console.warn('No se pudo registrar actividad de usuario (PUT):', e);
       }
 
-      // Función para obtener la IP local real
-      const getLocalIP = async (): Promise<string> => {
-        try {
-          // Crear una conexión WebRTC para obtener la IP local
-          const pc = new RTCPeerConnection({
-            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
-          });
-          
-          const dc = pc.createDataChannel('');
-          
-          return new Promise((resolve) => {
-            pc.onicecandidate = (ice) => {
-              if (ice && ice.candidate && ice.candidate.candidate) {
-                const candidate = ice.candidate.candidate;
-                const match = candidate.match(/([0-9]{1,3}\.){3}[0-9]{1,3}/);
-                if (match && !match[0].startsWith('127.') && !match[0].startsWith('169.254.')) {
-                  resolve(match[0]);
-                  pc.close();
-                }
-              }
-            };
-            
-            pc.createOffer().then(offer => pc.setLocalDescription(offer));
-            
-            // Fallback después de 2 segundos
-            setTimeout(() => {
-              resolve('127.0.0.1');
-              pc.close();
-            }, 2000);
-          });
-        } catch (error) {
-          console.warn('No se pudo obtener IP local:', error);
-          return '127.0.0.1';
-        }
-      };
 
       // Calcular URL de callback (si está configurada en el agente)
       // Ahora que tendremos backend en producción, hacemos fallback al origen actual.

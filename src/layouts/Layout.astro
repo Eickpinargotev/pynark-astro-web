@@ -5,9 +5,9 @@ export interface Props {
 }
 
 const { title, description = "Chatbots que convierten visitas en ventas y citas. Especialistas en agentes de servicio al cliente." } = Astro.props;
-// SSR: Detect initial theme from session cookie to avoid flash on navigation (default to dark)
+// SSR: Detect initial theme from session cookie to avoid flash on navigation (default to light)
 const cookieTheme = Astro.cookies.get('color-theme')?.value;
-const initialTheme: 'dark' | 'light' = cookieTheme === 'light' ? 'light' : 'dark';
+const initialTheme: 'dark' | 'light' = cookieTheme === 'dark' ? 'dark' : 'light';
 ---
 
 <!DOCTYPE html>
@@ -30,7 +30,7 @@ const initialTheme: 'dark' | 'light' = cookieTheme === 'light' ? 'light' : 'dark
     <meta name="description" content={description} />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content={initialTheme === 'dark' ? '#0f172a' : '#3b82f6'} />
-    <!-- No-flash theme init: per-session default dark, override by session selection, before paint -->
+    <!-- No-flash theme init: per-session default light, override by session selection, before paint -->
     <script>
       (function () {
         var root = document.documentElement;
@@ -41,7 +41,7 @@ const initialTheme: 'dark' | 'light' = cookieTheme === 'light' ? 'light' : 'dark
             return m ? decodeURIComponent(m[1]) : null;
           };
           var t = readCookie('color-theme') || sessionStorage.getItem('color-theme');
-          if (!t) { t = 'dark'; sessionStorage.setItem('color-theme', t); }
+          if (!t) { t = 'light'; sessionStorage.setItem('color-theme', t); }
           // Always sync cookie with current value to keep SSR in sync across navigations
           document.cookie = 'color-theme=' + t + '; path=/; samesite=lax';
           var isDark = t === 'dark';

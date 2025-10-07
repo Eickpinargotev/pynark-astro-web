@@ -286,6 +286,18 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
                 placeholder="Ej: +593 99 999 9999"
               />
             </div>
+            <div>
+              <label for="plan" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Plan de interés
+              </label>
+              <select id="plan" name="plan" required class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
+                <option value="" disabled selected>Selecciona un plan</option>
+                <option value="starter">Starter</option>
+                <option value="pro">Pro</option>
+                <option value="ultra">Ultra</option>
+                <option value="custom">Personalizado</option>
+              </select>
+            </div>
           </div>
           
           <div>
@@ -347,6 +359,20 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
     const submitBtn = document.getElementById('contact-submit') as HTMLButtonElement | null;
     const WEBHOOK_URL = 'https://paneln8n.erickpinargote.com/webhook/contacto_pynark';
 
+    // Preselección de plan por URL (?plan=starter|pro|ultra|custom)
+    const planEl = document.getElementById('plan') as HTMLSelectElement | null;
+    try {
+      const usp = new URLSearchParams(window.location.search);
+      const qplan = (usp.get('plan')||'').toLowerCase();
+      const allowed = new Set(['starter','pro','ultra','custom']);
+      if(planEl && allowed.has(qplan)){
+        planEl.value = qplan;
+        // opcional: resaltar selección
+        planEl.classList.add('ring-2','ring-primary-500');
+        setTimeout(()=> planEl.classList.remove('ring-2','ring-primary-500'), 1200);
+      }
+    } catch {}
+
     // Optional simple honeypot
     if(!form.querySelector('[name="_hp"]')){
       const hp = document.createElement('input');
@@ -384,9 +410,10 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
       const email = (formData.get('email')||'').toString().trim();
       const phone = (formData.get('phone')||'').toString().trim();
       const company = (formData.get('company')||'').toString().trim();
+      const plan = (formData.get('plan')||'').toString().trim();
       const message = (formData.get('message')||'').toString().trim();
 
-      if(!name || !email || !phone || !message){
+      if(!name || !email || !phone || !plan || !message){
         setStatus('Por favor completa los campos requeridos.', 'error');
         return;
       }
@@ -395,6 +422,7 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
         name,
         email,
         phone,
+        plan,
         company: company || null,
         message,
         submitted_at: new Date().toISOString(),

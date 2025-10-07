@@ -851,8 +851,7 @@ const __docIndexJSON = JSON.stringify(__docIndex).replace(/</g,'\\u003c');
       // Generate anchors and ToC from article headings (h2, h3)
       const article = document.getElementById('doc-article');
       const toc = document.getElementById('toc');
-      /** @type {(text: string) => string} */
-      const slugify = (text) => {
+      const slugify = (text: string): string => {
         return text
           .toLowerCase()
           .normalize('NFD').replace(/\p{Diacritic}/gu, '')
