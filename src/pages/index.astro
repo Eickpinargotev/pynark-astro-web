@@ -1,11 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Chat from '../components/Chat.tsx';
 import ChatSimulation from '../components/ChatSimulation.tsx';
-
-// Load agent configuration
-import ecommerceAgent from '../../agents/ecomerce_test.json';
-import drivingSchoolAgent from '../../agents/escuela_manejo.json';
+// Nota: se eliminó el chat de prueba. Mantenemos solo los componentes necesarios.
 ---
 
 <Layout title="Pynark Automation - Chatbots que Convierten">
@@ -24,213 +20,183 @@ import drivingSchoolAgent from '../../agents/escuela_manejo.json';
     </div>
   </section>
 
-  <!-- Chat Section -->
-  <section class="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-primary-50/50 to-secondary-50/50 dark:from-primary-900/10 dark:to-secondary-900/10">
-    <div class="max-w-7xl mx-auto text-center">
-      <div id="chat-section">
-        <button 
-          id="show-agents-btn"
-          class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-primary-600 to-secondary-600 hover:from-primary-700 hover:to-secondary-700 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-        >
-          PRUEBA NUESTROS AGENTES
-        </button>
-        
-        <div id="agent-buttons" class="hidden mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <button 
-            id="ecommerce-btn"
-            class="inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium rounded-xl shadow-lg hover:shadow-xl border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-300"
-          >
-            E-commerce Test
-          </button>
-          <button 
-            id="driving-btn"
-            class="inline-flex items-center justify-center px-6 py-3 bg-white dark:bg-slate-800 text-slate-900 dark:text-white font-medium rounded-xl shadow-lg hover:shadow-xl border border-slate-200 dark:border-slate-700 hover:border-primary-300 dark:hover:border-primary-600 transition-all duration-300"
-          >
-            Escuela de Manejo
-          </button>
-        </div>
+  <!-- Servicios Section -->
+  <section id="servicios" class="py-20 px-4 sm:px-6 lg:px-8 scroll-mt-24 bg-gradient-to-br from-primary-50/50 to-secondary-50/40 dark:from-primary-900/10 dark:to-secondary-900/10">
+    <div class="max-w-7xl mx-auto">
+      <div class="text-center mb-14">
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-3">
+          Lo que hacemos en Pynark Automation
+        </h2>
+        <p class="text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+          Arquitectura, agentes y automatización conectados a tus canales y datos.
+        </p>
+      </div>
 
-        <div id="chat-container" class="hidden mt-8 space-y-8">
-          <div id="chat-ecommerce" class="hidden">
-            <Chat client:load agentConfig={ecommerceAgent} />
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <!-- Card: Infraestructura de IA autónoma -->
+        <article class="group relative overflow-hidden rounded-3xl border border-slate-200/70 dark:border-slate-700/60 bg-white/70 dark:bg-slate-800/70 shadow-lg hover:shadow-xl transition-all">
+          <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-gradient-to-br from-primary-500/20 to-secondary-500/20 blur-2xl"></div>
+          <div class="p-7">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">🧠</div>
+              <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white">Infraestructura de IA autónoma</h3>
+            </div>
+            <ul class="mt-4 space-y-3 text-slate-600 dark:text-slate-300">
+              <li class="flex gap-3"><span class="mt-1">⚙️</span><span>Diseño e implementación de agentes orquestados, colas de tareas, logs y monitoreo.</span></li>
+              <li class="flex gap-3"><span class="mt-1">🔗</span><span>CRM a tu elección: Integración con HubSpot, Salesforce, Zoho, etc., con sincronización bidireccional de contactos, deals y actividades.</span></li>
+              <li class="flex gap-3"><span class="mt-1">💬</span><span>Soporte multicanal: WhatsApp, Instagram, Facebook y Telegram en una sola capa conversacional.</span></li>
+              <li class="flex gap-3"><span class="mt-1">🗄️</span><span>Base de datos y gobierno del dato: Modelado, limpieza y accesos seguros para alimentar a tus agentes y reportes.</span></li>
+            </ul>
           </div>
-          <div id="chat-driving" class="hidden">
-            <Chat client:load agentConfig={drivingSchoolAgent} />
+          <div class="pointer-events-none absolute left-0 right-0 bottom-0 h-[3px] bg-gradient-to-r from-primary-500 to-secondary-500 scale-x-0 group-hover:scale-x-100 origin-left transition-transform"></div>
+        </article>
+
+        <!-- Card: Agentes de IA que responden 24/7 -->
+        <article class="group relative overflow-hidden rounded-3xl border border-slate-200/70 dark:border-slate-700/60 bg-white/70 dark:bg-slate-800/70 shadow-lg hover:shadow-xl transition-all">
+          <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-gradient-to-br from-emerald-500/20 to-teal-500/20 blur-2xl"></div>
+          <div class="p-7">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">🤖</div>
+              <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white">Agentes de IA que responden 24/7</h3>
+            </div>
+            <ul class="mt-4 space-y-3 text-slate-600 dark:text-slate-300">
+              <li class="flex gap-3"><span class="mt-1">🎧</span><span>Atención al cliente automatizada con respuestas naturales, precisas y consistentes, y handoff a humano cuando haga falta.</span></li>
+              <li class="flex gap-3"><span class="mt-1">📚</span><span>Conocimiento actualizado: conexión a FAQs, catálogo, políticas y documentos internos.</span></li>
+              <li class="flex gap-3"><span class="mt-1">✨</span><span>Control de tono y marca: personalidad configurable para mantener tu identidad.</span></li>
+            </ul>
           </div>
-        </div>
+          <div class="pointer-events-none absolute left-0 right-0 bottom-0 h-[3px] bg-gradient-to-r from-emerald-500 to-teal-500 scale-x-0 group-hover:scale-x-100 origin-left transition-transform"></div>
+        </article>
+
+        <!-- Card: Automatización con n8n -->
+        <article class="group relative overflow-hidden rounded-3xl border border-slate-200/70 dark:border-slate-700/60 bg-white/70 dark:bg-slate-800/70 shadow-lg hover:shadow-xl transition-all">
+          <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 blur-2xl"></div>
+          <div class="p-7">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">🕸️</div>
+              <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white">Automatización con n8n</h3>
+            </div>
+            <ul class="mt-4 space-y-3 text-slate-600 dark:text-slate-300">
+              <li class="flex gap-3"><span class="mt-1">🔁</span><span>Workflows operativos: automatización de tareas repetitivas (altas/bajas, validaciones, disparadores por evento).</span></li>
+              <li class="flex gap-3"><span class="mt-1">🧩</span><span>Integración total: conectores con ERP, CRM, pasarelas de pago, formularios y calendarios.</span></li>
+              <li class="flex gap-3"><span class="mt-1">🛡️</span><span>Orquestación avanzada: ramas condicionales, manejo de errores, reintentos y alertas.</span></li>
+            </ul>
+          </div>
+          <div class="pointer-events-none absolute left-0 right-0 bottom-0 h-[3px] bg-gradient-to-r from-amber-500 to-orange-500 scale-x-0 group-hover:scale-x-100 origin-left transition-transform"></div>
+        </article>
+
+        <!-- Card: Automatización de ventas -->
+        <article class="group relative overflow-hidden rounded-3xl border border-slate-200/70 dark:border-slate-700/60 bg-white/70 dark:bg-slate-800/70 shadow-lg hover:shadow-xl transition-all">
+          <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-gradient-to-br from-fuchsia-500/20 to-violet-500/20 blur-2xl"></div>
+          <div class="p-7">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">💼</div>
+              <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white">Automatización de ventas</h3>
+            </div>
+            <ul class="mt-4 space-y-3 text-slate-600 dark:text-slate-300">
+              <li class="flex gap-3"><span class="mt-1">🧲</span><span>Gestión de leads: captura, scoring y enrutamiento automático.</span></li>
+              <li class="flex gap-3"><span class="mt-1">📨</span><span>Nurturing y seguimiento: secuencias por email y WhatsApp, recordatorios y tareas para tu equipo comercial.</span></li>
+              <li class="flex gap-3"><span class="mt-1">📅</span><span>Citas y demos: agendado automático con confirmaciones y recordatorios.</span></li>
+            </ul>
+          </div>
+          <div class="pointer-events-none absolute left-0 right-0 bottom-0 h-[3px] bg-gradient-to-r from-fuchsia-500 to-violet-500 scale-x-0 group-hover:scale-x-100 origin-left transition-transform"></div>
+        </article>
+
+        <!-- Card: Analítica, Dashboards & KPIs -->
+        <article class="group relative overflow-hidden rounded-3xl border border-slate-200/70 dark:border-slate-700/60 bg-white/70 dark:bg-slate-800/70 shadow-lg hover:shadow-xl transition-all xl:col-span-2">
+          <div class="absolute -top-12 -right-12 w-40 h-40 rounded-full bg-gradient-to-br from-sky-500/20 to-cyan-500/20 blur-2xl"></div>
+          <div class="p-7">
+            <div class="flex items-center gap-3">
+              <div class="text-3xl">📊</div>
+              <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white">Analítica, Dashboards & KPIs</h3>
+            </div>
+            <ul class="mt-4 space-y-3 text-slate-600 dark:text-slate-300">
+              <li class="flex gap-3"><span class="mt-1">⏱️</span><span>Dashboards en tiempo real: métricas clave de atención, conversión, ventas y satisfacción.</span></li>
+              <li class="flex gap-3"><span class="mt-1">📬</span><span>Reportes automáticos: envío programado con insights accionables.</span></li>
+              <li class="flex gap-3"><span class="mt-1">🧪</span><span>Optimización continua: A/B testing de flujos, prompts y secuencias para mejorar conversiones.</span></li>
+            </ul>
+          </div>
+          <div class="pointer-events-none absolute left-0 right-0 bottom-0 h-[3px] bg-gradient-to-r from-sky-500 to-cyan-500 scale-x-0 group-hover:scale-x-100 origin-left transition-transform"></div>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- How We Work Section -->
-  <section class="py-20 px-4 sm:px-6 lg:px-8">
+  <!-- How We Work Section (rediseño con emojis) -->
+  <section id="proceso" class="py-20 px-4 sm:px-6 lg:px-8 scroll-mt-24">
     <div class="max-w-7xl mx-auto">
       <div class="text-center mb-16">
-        <h2 class="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-6">
-          Cómo trabajamos
+        <h2 class="font-display text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-3">
+          ¿Cómo trabajamos?
         </h2>
+        <p class="text-slate-600 dark:text-slate-300 max-w-3xl mx-auto">
+          Un proceso claro y estructurado para garantizar el éxito de tu automatización
+        </p>
       </div>
-      
-      <div class="relative">
-        <!-- Timeline line - Desktop -->
-        <div class="hidden md:block absolute left-1/2 transform -translate-x-px h-full w-0.5 bg-gradient-to-b from-primary-400 to-secondary-400"></div>
-        
-        <!-- Timeline line - Mobile -->
-        <div class="md:hidden absolute left-8 top-0 h-full w-0.5 bg-gradient-to-b from-primary-400 to-secondary-400"></div>
-        
-        <!-- Timeline items -->
-        <div class="space-y-12 md:space-y-16">
-          <!-- Step 1 -->
-          <div class="relative flex items-center">
-            <!-- Mobile Layout -->
-            <div class="md:hidden flex items-start">
-              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg z-10">
-                <span class="text-white font-bold">1</span>
-              </div>
-              <div class="ml-6 flex-1">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    Diagnóstico
-                  </h3>
-                  <p class="text-slate-600 dark:text-slate-300">
-                    Sesión de 30-45 minutos para entender tu negocio y necesidades específicas
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Desktop Layout -->
-            <div class="hidden md:flex md:items-center w-full">
-              <div class="flex-1 pr-8 text-right">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    Diagnóstico
-                  </h3>
-                  <p class="text-slate-600 dark:text-slate-300">
-                    Sesión de 30-45 minutos para entender tu negocio y necesidades específicas
-                  </p>
-                </div>
-              </div>
-              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg">
-                <span class="text-white font-bold">1</span>
-              </div>
-              <div class="flex-1 pl-8"></div>
-            </div>
-          </div>
 
-          <!-- Step 2 -->
-          <div class="relative flex items-center">
-            <!-- Mobile Layout -->
-            <div class="md:hidden flex items-start">
-              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg z-10">
-                <span class="text-white font-bold">2</span>
-              </div>
-              <div class="ml-6 flex-1">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    Setup de vertical
-                  </h3>
-                  <p class="text-slate-600 dark:text-slate-300">
-                    Configuración personalizada del agente en 2-5 días según tu industria
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Desktop Layout -->
-            <div class="hidden md:flex md:items-center w-full">
-              <div class="flex-1 pr-8"></div>
-              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg">
-                <span class="text-white font-bold">2</span>
-              </div>
-              <div class="flex-1 pl-8">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    Setup de vertical
-                  </h3>
-                  <p class="text-slate-600 dark:text-slate-300">
-                    Configuración personalizada del agente en 2-5 días según tu industria
-                  </p>
-                </div>
-              </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <!-- Card 1 -->
+        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all">
+          <div class="absolute -top-5 left-8">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-secondary-600 flex items-center justify-center text-2xl shadow-lg">
+              <span class="text-white font-bold">1</span>
             </div>
           </div>
+          <div class="mt-6 text-5xl">🛠️</div>
+          <h3 class="mt-4 font-display text-xl font-semibold text-slate-900 dark:text-white">
+            Diagnóstico
+          </h3>
+          <p class="mt-2 text-slate-600 dark:text-slate-300">
+            Sesión de 30-45 minutos para entender tu negocio y necesidades específicas
+          </p>
+        </div>
 
-          <!-- Step 3 -->
-          <div class="relative flex items-center">
-            <!-- Mobile Layout -->
-            <div class="md:hidden flex items-start">
-              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg z-10">
-                <span class="text-white font-bold">3</span>
-              </div>
-              <div class="ml-6 flex-1">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    Go-live con monitoreo
-                  </h3>
-                  <p class="text-slate-600 dark:text-slate-300">
-                    Lanzamiento con supervisión activa para garantizar el rendimiento óptimo
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Desktop Layout -->
-            <div class="hidden md:flex md:items-center w-full">
-              <div class="flex-1 pr-8 text-right">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    Go-live con monitoreo
-                  </h3>
-                  <p class="text-slate-600 dark:text-slate-300">
-                    Lanzamiento con supervisión activa para garantizar el rendimiento óptimo
-                  </p>
-                </div>
-              </div>
-              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg">
-                <span class="text-white font-bold">3</span>
-              </div>
-              <div class="flex-1 pl-8"></div>
+        <!-- Card 2 -->
+        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all">
+          <div class="absolute -top-5 left-8">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-secondary-600 flex items-center justify-center text-2xl shadow-lg">
+              <span class="text-white font-bold">2</span>
             </div>
           </div>
+          <div class="mt-6 text-5xl">🤖</div>
+          <h3 class="mt-4 font-display text-xl font-semibold text-slate-900 dark:text-white">
+            Setup de vertical
+          </h3>
+          <p class="mt-2 text-slate-600 dark:text-slate-300">
+            Configuración personalizada del agente en 2-5 días según tu industria
+          </p>
+        </div>
 
-          <!-- Step 4 -->
-          <div class="relative flex items-center">
-            <!-- Mobile Layout -->
-            <div class="md:hidden flex items-start">
-              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg z-10">
-                <span class="text-white font-bold">4</span>
-              </div>
-              <div class="ml-6 flex-1">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    Optimización mensual
-                  </h3>
-                  <p class="text-slate-600 dark:text-slate-300">
-                    Reportes detallados con insights y mejoras continuas del rendimiento
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Desktop Layout -->
-            <div class="hidden md:flex md:items-center w-full">
-              <div class="flex-1 pr-8"></div>
-              <div class="relative flex items-center justify-center w-12 h-12 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full border-4 border-white dark:border-slate-900 shadow-lg">
-                <span class="text-white font-bold">4</span>
-              </div>
-              <div class="flex-1 pl-8">
-                <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-lg border border-slate-200 dark:border-slate-700">
-                  <h3 class="font-display text-xl font-semibold text-slate-900 dark:text-white mb-2">
-                    Optimización mensual
-                  </h3>
-                  <p class="text-slate-600 dark:text-slate-300">
-                    Reportes detallados con insights y mejoras continuas del rendimiento
-                  </p>
-                </div>
-              </div>
+        <!-- Card 3 -->
+        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all">
+          <div class="absolute -top-5 left-8">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-secondary-600 flex items-center justify-center text-2xl shadow-lg">
+              <span class="text-white font-bold">3</span>
             </div>
           </div>
+          <div class="mt-6 text-5xl">🧪</div>
+          <h3 class="mt-4 font-display text-xl font-semibold text-slate-900 dark:text-white">
+            Go-live con monitoreo
+          </h3>
+          <p class="mt-2 text-slate-600 dark:text-slate-300">
+            Lanzamiento con supervisión activa para garantizar el rendimiento óptimo
+          </p>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="group relative bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-700 hover:shadow-xl transition-all">
+          <div class="absolute -top-5 left-8">
+            <div class="w-14 h-14 rounded-full bg-gradient-to-r from-primary-600 to-secondary-600 flex items-center justify-center text-2xl shadow-lg">
+              <span class="text-white font-bold">4</span>
+            </div>
+          </div>
+          <div class="mt-6 text-5xl">🚀</div>
+          <h3 class="mt-4 font-display text-xl font-semibold text-slate-900 dark:text-white">
+            Optimización mensual
+          </h3>
+          <p class="mt-2 text-slate-600 dark:text-slate-300">
+            Reportes detallados con insights y mejoras continuas del rendimiento
+          </p>
         </div>
       </div>
     </div>
@@ -345,39 +311,7 @@ import drivingSchoolAgent from '../../agents/escuela_manejo.json';
         window.scrollTo(0, 0);
       }
     });
-
-    // Chat section interactivity
-    const showAgentsBtn = document.getElementById('show-agents-btn');
-    const agentButtons = document.getElementById('agent-buttons');
-  const ecommerceBtn = document.getElementById('ecommerce-btn');
-  const drivingBtn = document.getElementById('driving-btn');
-  const chatContainer = document.getElementById('chat-container');
-  const chatEcommerce = document.getElementById('chat-ecommerce');
-  const chatDriving = document.getElementById('chat-driving');
-
-    showAgentsBtn?.addEventListener('click', () => {
-      showAgentsBtn.style.display = 'none';
-      agentButtons?.classList.remove('hidden');
-    });
-
-  function showChat(which: 'ecommerce' | 'driving') {
-      if (!chatContainer || !chatEcommerce || !chatDriving) return;
-      agentButtons?.classList.add('hidden');
-      chatContainer.classList.remove('hidden');
-      // Hide both, show selected
-      chatEcommerce.classList.add('hidden');
-      chatDriving.classList.add('hidden');
-      if (which === 'ecommerce') {
-        chatEcommerce.classList.remove('hidden');
-      } else if (which === 'driving') {
-        chatDriving.classList.remove('hidden');
-      }
-    }
-
-    ecommerceBtn?.addEventListener('click', () => showChat('ecommerce'));
-    drivingBtn?.addEventListener('click', () => showChat('driving'));
-
-  // Nota: se eliminó el placeholder de envío de formularios para no interferir con el formulario del chat
+    // Scripts del formulario de contacto
   // --- Contact form submission to n8n webhook ---
   (function initContactForm(){
     const form = document.getElementById('contact-form') as HTMLFormElement | null;

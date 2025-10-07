@@ -75,7 +75,8 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   // Removed visibility gating to avoid re-runs during scroll
-  const [showButtons, setShowButtons] = useState(true);
+  // Default hidden to avoid initial overlay blur on mobile before effect runs
+  const [showButtons, setShowButtons] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isUserTyping, setIsUserTyping] = useState(false);
   const [currentInputText, setCurrentInputText] = useState('');
@@ -348,8 +349,8 @@ const ChatSimulation: React.FC<ChatSimulationProps> = ({ className = '' }) => {
           </div>
         </div>
 
-        {/* Mobile Overlay */}
-        {showButtons && (
+        {/* Mobile Overlay: only render on mobile when panel is open */}
+        {isMobile && showButtons && (
           <div 
             className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
             onClick={() => setShowButtons(false)}
