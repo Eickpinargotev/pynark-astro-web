@@ -249,54 +249,100 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
               <label for="name" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Nombre
               </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Tu nombre completo"
-              />
+              <div class="relative rounded-xl p-[2px] bg-gradient-to-r from-primary-500 to-secondary-500 shadow-sm group focus-within:shadow-md transition-all">
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  required
+                  class="w-full rounded-xl bg-white/95 dark:bg-slate-800/90 backdrop-blur pl-12 pr-4 py-3 border-0 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/80"
+                  placeholder="Tu nombre completo"
+                />
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" aria-hidden="true">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+              </div>
             </div>
             <div>
               <label for="email" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Email
               </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="tu@email.com"
-              />
+              <div class="relative rounded-xl p-[2px] bg-gradient-to-r from-primary-500 to-secondary-500 shadow-sm group focus-within:shadow-md transition-all">
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  class="w-full rounded-xl bg-white/95 dark:bg-slate-800/90 backdrop-blur pl-12 pr-4 py-3 border-0 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/80"
+                  placeholder="tu@email.com"
+                />
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" aria-hidden="true">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" opacity="0"/><path d="M4 8l8 5 8-5"/><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+                </span>
+              </div>
             </div>
             <div>
               <label for="phone" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Teléfono
               </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                required
-                inputmode="tel"
-                autocomplete="tel"
-                class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                placeholder="Ej: +593 99 999 9999"
-              />
+              <div class="relative rounded-xl p-[2px] bg-gradient-to-r from-primary-500 to-secondary-500 shadow-sm group focus-within:shadow-md transition-all">
+                <input
+                  type="tel"
+                  id="phone"
+                  name="phone"
+                  required
+                  inputmode="tel"
+                  autocomplete="tel"
+                  class="w-full rounded-xl bg-white/95 dark:bg-slate-800/90 backdrop-blur pl-12 pr-4 py-3 border-0 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/80"
+                  placeholder="Ej: +593 99 999 9999"
+                />
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" aria-hidden="true">
+                  <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2A19.74 19.74 0 0 1 3.08 5.18 2 2 0 0 1 5 3h3a2 2 0 0 1 2 1.72 12.44 12.44 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L9 10a16 16 0 0 0 5 5l.36-.25a2 2 0 0 1 2.11-.45 12.44 12.44 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                </span>
+              </div>
             </div>
             <div>
-              <label for="plan" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+              <label for="plan-trigger" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                 Plan de interés
               </label>
-              <select id="plan" name="plan" required class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent">
-                <option value="" disabled selected>Selecciona un plan</option>
-                <option value="starter">Starter</option>
-                <option value="pro">Pro</option>
-                <option value="ultra">Ultra</option>
-                <option value="custom">Personalizado</option>
-              </select>
+              <!-- Custom Select: stores value in hidden input name=plan -->
+              <div class="relative" data-plan-select>
+                <input type="hidden" id="plan" name="plan" value="" />
+                <div class="rounded-xl p-[2px] bg-gradient-to-r from-primary-500 to-secondary-500 shadow-sm group focus-within:shadow-md transition-all">
+                  <button type="button" id="plan-trigger" data-trigger aria-haspopup="listbox" aria-expanded="false"
+                    class="relative w-full rounded-xl bg-white/95 dark:bg-slate-800/90 backdrop-blur px-12 pr-12 py-3 text-left text-slate-900 dark:text-slate-100 shadow-inner focus:outline-none focus:ring-2 focus:ring-primary-500/80"
+                  >
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" aria-hidden="true">
+                      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l7 4-7 4-7-4 7-4z"/><path d="M19 10l-7 4-7-4"/><path d="M19 16l-7 4-7-4"/></svg>
+                    </span>
+                    <span data-label class="block truncate text-slate-600 dark:text-slate-300">Selecciona un plan</span>
+                    <span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" aria-hidden="true">
+                      <svg data-chevron class="w-5 h-5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    </span>
+                  </button>
+                </div>
+
+                <ul data-listbox role="listbox" tabindex="-1"
+                  class="invisible opacity-0 pointer-events-none absolute z-20 mt-2 w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95 backdrop-blur shadow-xl ring-1 ring-black/5 dark:ring-white/10 divide-y divide-slate-100/60 dark:divide-slate-800/80 transition-[opacity,transform,visibility] duration-150 origin-top scale-95"
+                >
+                  <li role="option" data-value="starter" class="cursor-pointer px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800/60 flex items-center justify-between">
+                    <span>Starter</span>
+                    <svg class="w-4 h-4 text-primary-600 opacity-0" data-check aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </li>
+                  <li role="option" data-value="pro" class="cursor-pointer px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800/60 flex items-center justify-between">
+                    <span>Pro</span>
+                    <svg class="w-4 h-4 text-primary-600 opacity-0" data-check aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </li>
+                  <li role="option" data-value="ultra" class="cursor-pointer px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800/60 flex items-center justify-between">
+                    <span>Ultra</span>
+                    <svg class="w-4 h-4 text-primary-600 opacity-0" data-check aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </li>
+                  <li role="option" data-value="custom" class="cursor-pointer px-4 py-2.5 text-sm text-slate-800 dark:text-slate-200 hover:bg-primary-50 dark:hover:bg-slate-800/60 flex items-center justify-between rounded-b-xl">
+                    <span>Personalizado</span>
+                    <svg class="w-4 h-4 text-primary-600 opacity-0" data-check aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
           
@@ -304,27 +350,37 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
             <label for="company" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Empresa
             </label>
-            <input
-              type="text"
-              id="company"
-              name="company"
-              class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              placeholder="Nombre de tu empresa"
-            />
+            <div class="relative rounded-xl p-[2px] bg-gradient-to-r from-primary-500 to-secondary-500 shadow-sm group focus-within:shadow-md transition-all">
+              <input
+                type="text"
+                id="company"
+                name="company"
+                class="w-full rounded-xl bg-white/95 dark:bg-slate-800/90 backdrop-blur pl-12 pr-4 py-3 border-0 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/80"
+                placeholder="Nombre de tu empresa"
+              />
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-slate-400" aria-hidden="true">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+              </span>
+            </div>
           </div>
           
           <div>
             <label for="message" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Mensaje
             </label>
-            <textarea
-              id="message"
-              name="message"
-              rows="4"
-              required
-              class="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent resize-none"
-              placeholder="Cuéntanos sobre tu proyecto y cómo podemos ayudarte..."
-            ></textarea>
+            <div class="relative rounded-xl p-[2px] bg-gradient-to-r from-primary-500 to-secondary-500 shadow-sm group focus-within:shadow-md transition-all">
+              <textarea
+                id="message"
+                name="message"
+                rows="4"
+                required
+                class="w-full rounded-xl bg-white/95 dark:bg-slate-800/90 backdrop-blur pl-12 pr-4 py-3 border-0 text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500/80 resize-none"
+                placeholder="Cuéntanos sobre tu proyecto y cómo podemos ayudarte..."
+              ></textarea>
+              <span class="absolute left-3 top-3 text-slate-500 dark:text-slate-400" aria-hidden="true">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </span>
+            </div>
           </div>
           
           <div class="space-y-4">
@@ -359,17 +415,102 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
     const submitBtn = document.getElementById('contact-submit') as HTMLButtonElement | null;
     const WEBHOOK_URL = 'https://paneln8n.erickpinargote.com/webhook/contacto_pynark';
 
+    // Custom dropdown wiring (value sync to hidden input#plan)
+    const planWrap = document.querySelector('[data-plan-select]') as HTMLElement | null;
+    const planHidden = document.getElementById('plan') as HTMLInputElement | null;
+    const trigger = planWrap?.querySelector('[data-trigger]') as HTMLButtonElement | null;
+    const label = planWrap?.querySelector('[data-label]') as HTMLElement | null;
+    const chevron = planWrap?.querySelector('[data-chevron]') as SVGElement | null;
+    const listbox = planWrap?.querySelector('[data-listbox]') as HTMLUListElement | null;
+    const options = Array.from(listbox?.querySelectorAll('[role="option"]') ?? []) as HTMLLIElement[];
+
+    function openList() {
+      if(!listbox || !trigger) return;
+      listbox.classList.remove('invisible','pointer-events-none');
+      listbox.classList.remove('opacity-0');
+      listbox.style.transform = 'scale(1)';
+      listbox.classList.add('opacity-100');
+      trigger.setAttribute('aria-expanded','true');
+      chevron?.classList.add('rotate-180');
+    }
+    function closeList() {
+      if(!listbox || !trigger) return;
+      listbox.classList.add('opacity-0');
+      listbox.classList.remove('opacity-100');
+      listbox.style.transform = 'scale(0.95)';
+      trigger.setAttribute('aria-expanded','false');
+      chevron?.classList.remove('rotate-180');
+      // Defer visibility after transition
+      setTimeout(()=>{
+        listbox.classList.add('invisible','pointer-events-none');
+      }, 120);
+    }
+    function setPlan(val: string, text?: string) {
+      if(!planHidden || !label) return;
+      planHidden.value = val;
+      label.textContent = text || (val.charAt(0).toUpperCase()+val.slice(1));
+      // Visual mark
+      const wrapper = planWrap?.querySelector('.rounded-xl.p-\\[2px\\]') as HTMLElement | null;
+      if(wrapper){
+        wrapper.classList.add('ring-2','ring-primary-500/70');
+        setTimeout(()=> wrapper.classList.remove('ring-2','ring-primary-500/70'), 1000);
+      }
+      // toggle checks
+      options.forEach(li => {
+        const v = li.getAttribute('data-value');
+        const check = li.querySelector('[data-check]') as SVGElement | null;
+        if(check){ check.style.opacity = v === val ? '1' : '0'; }
+        li.classList.toggle('bg-primary-50', v === val);
+        li.classList.toggle('dark:bg-slate-800/60', v === val);
+      });
+    }
+
+    // Events
+    trigger?.addEventListener('click', (e) => {
+      e.preventDefault();
+      const expanded = trigger.getAttribute('aria-expanded') === 'true';
+      expanded ? closeList() : openList();
+    });
+    options.forEach(li => {
+      li.addEventListener('click', () => {
+        const v = li.getAttribute('data-value') || '';
+        const t = (li.querySelector('span')?.textContent || '').trim();
+        setPlan(v, t);
+        closeList();
+        trigger?.focus();
+      });
+    });
+    document.addEventListener('click', (ev) => {
+      if(!planWrap) return;
+      const target = ev.target as Node;
+      if(!planWrap.contains(target)) closeList();
+    });
+    trigger?.addEventListener('keydown', (e) => {
+      if(e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' '){
+        e.preventDefault();
+        openList();
+        (options[0] as HTMLElement)?.focus();
+      }
+    });
+    options.forEach((li, idx) => {
+      li.tabIndex = -1;
+      li.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape'){ e.preventDefault(); closeList(); trigger?.focus(); }
+        if(e.key === 'ArrowDown'){ e.preventDefault(); (options[idx+1]||options[0])?.focus(); }
+        if(e.key === 'ArrowUp'){ e.preventDefault(); (options[idx-1]||options[options.length-1])?.focus(); }
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); li.click(); }
+      });
+    });
+
     // Preselección de plan por URL (?plan=starter|pro|ultra|custom)
-    const planEl = document.getElementById('plan') as HTMLSelectElement | null;
     try {
       const usp = new URLSearchParams(window.location.search);
       const qplan = (usp.get('plan')||'').toLowerCase();
       const allowed = new Set(['starter','pro','ultra','custom']);
-      if(planEl && allowed.has(qplan)){
-        planEl.value = qplan;
-        // opcional: resaltar selección
-        planEl.classList.add('ring-2','ring-primary-500');
-        setTimeout(()=> planEl.classList.remove('ring-2','ring-primary-500'), 1200);
+      if(planHidden && allowed.has(qplan)){
+        const li = options.find(o => o.getAttribute('data-value') === qplan);
+        const t = (li?.querySelector('span')?.textContent || '').trim();
+        setPlan(qplan, t);
       }
     } catch {}
 
