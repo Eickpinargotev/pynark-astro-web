@@ -409,26 +409,26 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
     // Scripts del formulario de contacto
   // --- Contact form submission to n8n webhook ---
   (function initContactForm(){
-    const form = document.getElementById('contact-form');
+    const form = document.getElementById('contact-form') as HTMLFormElement | null;
     if(!form) return;
-    const statusEl = document.getElementById('contact-status');
-    const submitBtn = document.getElementById('contact-submit');
+    const statusEl = document.getElementById('contact-status') as HTMLElement | null;
+    const submitBtn = document.getElementById('contact-submit') as HTMLButtonElement | null;
     const WEBHOOK_URL = 'https://paneln8n.erickpinargote.com/webhook/contacto_pynark';
 
     // Custom dropdown wiring (value sync to hidden input#plan)
-    const planWrap = document.querySelector('[data-plan-select]');
-    const planHidden = document.getElementById('plan');
-    const trigger = planWrap?.querySelector('[data-trigger]');
-    const label = planWrap?.querySelector('[data-label]');
-    const chevron = planWrap?.querySelector('[data-chevron]');
-    const listbox = planWrap?.querySelector('[data-listbox]');
-    const options = Array.from(listbox?.querySelectorAll('[role="option"]') ?? []);
+    const planWrap = document.querySelector('[data-plan-select]') as HTMLElement | null;
+    const planHidden = document.getElementById('plan') as HTMLInputElement | null;
+    const trigger = planWrap?.querySelector('[data-trigger]') as HTMLButtonElement | null;
+    const label = planWrap?.querySelector('[data-label]') as HTMLElement | null;
+    const chevron = planWrap?.querySelector('[data-chevron]') as SVGElement | null;
+    const listbox = planWrap?.querySelector('[data-listbox]') as HTMLUListElement | null;
+    const options = Array.from(listbox?.querySelectorAll('[role="option"]') ?? []) as HTMLLIElement[];
 
     function openList() {
       if(!listbox || !trigger) return;
       listbox.classList.remove('invisible','pointer-events-none');
       listbox.classList.remove('opacity-0');
-      listbox.style.transform = 'scale(1)';
+      (listbox as HTMLUListElement).style.transform = 'scale(1)';
       listbox.classList.add('opacity-100');
       trigger.setAttribute('aria-expanded','true');
       chevron?.classList.add('rotate-180');
@@ -437,7 +437,7 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
       if(!listbox || !trigger) return;
       listbox.classList.add('opacity-0');
       listbox.classList.remove('opacity-100');
-      listbox.style.transform = 'scale(0.95)';
+      (listbox as HTMLUListElement).style.transform = 'scale(0.95)';
       trigger.setAttribute('aria-expanded','false');
       chevron?.classList.remove('rotate-180');
       // Defer visibility after transition
@@ -445,12 +445,12 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
         listbox.classList.add('invisible','pointer-events-none');
       }, 120);
     }
-    function setPlan(val, text) {
+    function setPlan(val: string, text?: string) {
       if(!planHidden || !label) return;
-      (planHidden).value = val;
-      (label).textContent = text || (val.charAt(0).toUpperCase()+val.slice(1));
+      (planHidden as HTMLInputElement).value = val;
+      (label as HTMLElement).textContent = text || (val.charAt(0).toUpperCase()+val.slice(1));
       // Visual mark
-      const wrapper = planWrap?.querySelector('.rounded-xl.p-\\[2px\\]');
+      const wrapper = planWrap?.querySelector('.rounded-xl.p-\\[2px\\]') as HTMLElement | null;
       if(wrapper){
         wrapper.classList.add('ring-2','ring-primary-500/70');
         setTimeout(()=> wrapper.classList.remove('ring-2','ring-primary-500/70'), 1000);
@@ -458,7 +458,7 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
       // toggle checks
       options.forEach(li => {
         const v = li.getAttribute('data-value');
-        const check = li.querySelector('[data-check]');
+        const check = li.querySelector('[data-check]') as SVGElement | null;
         if(check){ check.style.opacity = v === val ? '1' : '0'; }
         li.classList.toggle('bg-primary-50', v === val);
         li.classList.toggle('dark:bg-slate-800/60', v === val);
@@ -482,23 +482,23 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
     });
     document.addEventListener('click', (ev) => {
       if(!planWrap) return;
-      const target = ev.target;
+      const target = ev.target as Node;
       if(!planWrap.contains(target)) closeList();
     });
-    trigger?.addEventListener('keydown', (e) => {
+    trigger?.addEventListener('keydown', (e: KeyboardEvent) => {
       if(e.key === 'ArrowDown' || e.key === 'Enter' || e.key === ' '){
         e.preventDefault();
         openList();
-        (options[0])?.focus();
+        (options[0] as HTMLElement)?.focus();
       }
     });
     options.forEach((li, idx) => {
-      (li).tabIndex = -1;
-      li.addEventListener('keydown', (e) => {
+      (li as HTMLLIElement).tabIndex = -1;
+      li.addEventListener('keydown', (e: KeyboardEvent) => {
         if(e.key === 'Escape'){ e.preventDefault(); closeList(); trigger?.focus(); }
-        if(e.key === 'ArrowDown'){ e.preventDefault(); (options[idx+1]||options[0])?.focus(); }
-        if(e.key === 'ArrowUp'){ e.preventDefault(); (options[idx-1]||options[options.length-1])?.focus(); }
-        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); li.click(); }
+        if(e.key === 'ArrowDown'){ e.preventDefault(); (options[idx+1]||options[0]) && (options[idx+1]||options[0] as any)?.focus?.(); }
+        if(e.key === 'ArrowUp'){ e.preventDefault(); (options[idx-1]||options[options.length-1]) && (options[idx-1]||options[options.length-1] as any)?.focus?.(); }
+        if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); (li as HTMLElement).click(); }
       });
     });
 
@@ -526,24 +526,24 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
       form.appendChild(hp);
     }
 
-    const setStatus = (msg, type) => {
+    const setStatus = (msg: string, type: 'info'|'success'|'error') => {
       if(!statusEl) return;
       const base = 'px-4 py-3 rounded-lg border text-sm font-medium';
-      const styles = {
+      const styles: Record<'info'|'success'|'error', string> = {
         info: 'bg-slate-100 dark:bg-slate-700/50 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600',
         success: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 border-emerald-300 dark:border-emerald-700',
         error: 'bg-rose-100 dark:bg-rose-900/30 text-rose-800 dark:text-rose-200 border-rose-300 dark:border-rose-700'
       };
-      statusEl.className = base + ' ' + styles[type];
-      statusEl.textContent = msg;
+      (statusEl as HTMLElement).className = base + ' ' + styles[type];
+      (statusEl as HTMLElement).textContent = msg;
     };
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
       if(submitBtn?.disabled) return; // prevent double
-      const formData = new FormData(form);
+      const formData = new FormData(form as HTMLFormElement);
       // Honeypot detection
-      if((formData.get('_hp') || '').toString().trim().length){
+      if((formData.get('_hp') as string)?.toString().trim().length){
         setStatus('Enviado', 'success'); // Pretend success to bots
         return;
       }
@@ -572,7 +572,7 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
       };
 
       try {
-        submitBtn && (submitBtn.disabled = true);
+        submitBtn && ((submitBtn as HTMLButtonElement).disabled = true);
         setStatus('Enviando tu mensaje...', 'info');
         const resp = await fetch(WEBHOOK_URL, {
           method: 'POST',
@@ -583,14 +583,14 @@ import ChatSimulation from '../components/ChatSimulation.tsx';
           throw new Error('Status ' + resp.status);
         }
         setStatus('¡Mensaje enviado! Te contactaremos muy pronto.', 'success');
-        form.reset();
+        (form as HTMLFormElement).reset();
         // Foco accesible
         setTimeout(() => { statusEl?.scrollIntoView({behavior:'smooth', block:'center'}); }, 50);
       } catch(err){
         console.error('Error enviando formulario', err);
         setStatus('No se pudo enviar. Intenta nuevamente en unos segundos.', 'error');
       } finally {
-        submitBtn && (submitBtn.disabled = false);
+        submitBtn && ((submitBtn as HTMLButtonElement).disabled = false);
       }
     });
   })();
