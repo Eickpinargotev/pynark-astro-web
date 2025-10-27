@@ -11,7 +11,7 @@ A. Starter
     - Buffer de mensajes
 - Alcance: flujo FAQ + respuestas pre-definidas 
 - Integraciones: 1 (reportes).
-- Precio: $250–$450. ($7/mes pass-through)
+- Precio: $249–$450. ($7/mes pass-through)
 
 B. Pro
 - Incluye:
